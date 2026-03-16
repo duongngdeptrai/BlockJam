@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public class MapController : MonoBehaviour
@@ -6,6 +8,7 @@ public class MapController : MonoBehaviour
     [SerializeField] private Door doorPrefab;
     [SerializeField] private Wall wallPrefab;
     [SerializeField] private Block blockPrefab;
+    [SerializeField] private GameObject Grid;
     private int[,] mapBorderData =
     {
         {0,1,0,0,2,0,1,0,4,0,0,1,0,1},
@@ -30,6 +33,7 @@ public class MapController : MonoBehaviour
     {
         GenWalls();
         GenDoors();
+        GenGrid();
         GenBlocks();
     }
     private void GenWalls()
@@ -126,6 +130,17 @@ public class MapController : MonoBehaviour
                     block.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, i - (rows - 1) / 2f, 0);
                     block.SetColorBlock(GetColorType(mapBlockData[i, j]));
                 }
+            }
+        }
+    }
+    private void GenGrid()
+    {
+        for(int i = 0; i < rows; i++)
+        {
+            for(int j = 0; j < columns; j++)
+            {
+                var grid = Instantiate(Grid, transform);
+                grid.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, i - (rows - 1) / 2f, 0);
             }
         }
     }
