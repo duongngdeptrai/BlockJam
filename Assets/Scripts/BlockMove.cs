@@ -38,6 +38,10 @@ public class BlockMove : MonoBehaviour
         {
             rb.MovePosition(targetPos);
         }
+        else
+        {
+            offset = transform.position - mousePos;
+        }
     }
 
     private void OnMouseUp()
