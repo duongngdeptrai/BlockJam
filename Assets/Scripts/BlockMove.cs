@@ -43,6 +43,7 @@ public class BlockMove : MonoBehaviour
     private void OnMouseUp()
     {
         isDragging = false;
+        SnapToGrid();
     }
     bool IsColliding(Vector3 direction, float distance)
     {
@@ -59,5 +60,12 @@ public class BlockMove : MonoBehaviour
         }
 
         return false;
+    }
+    public void SnapToGrid()
+    {
+        Vector3 position = transform.position;
+        position.x = Mathf.Round(position.x - 0.5f) + 0.5f;
+        position.y = Mathf.Round(position.y);
+        transform.position = position;
     }
 }
