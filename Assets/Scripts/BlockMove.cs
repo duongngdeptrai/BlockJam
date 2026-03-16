@@ -1,16 +1,16 @@
 using UnityEngine;
 using System.Collections.Generic;
-
 public class BlockMove : MonoBehaviour
 {
     [SerializeField] private BoxCollider2D boxCollider;
     private bool isDragging = false;
     private Vector3 offset;
     private Camera cam;
-
+    private Rigidbody2D rb;
     private void Start()
     {
         cam = Camera.main;
+        rb = GetComponent<Rigidbody2D>();
     }
 
     private void OnMouseDown()
@@ -36,7 +36,7 @@ public class BlockMove : MonoBehaviour
         direction.Normalize();
         if (!IsColliding(direction, distance))
         {
-            transform.position = targetPos;
+            rb.MovePosition(targetPos);
         }
     }
 
