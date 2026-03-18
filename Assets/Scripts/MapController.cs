@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -7,8 +8,9 @@ public class MapController : MonoBehaviour
     [SerializeField] private int rows = 7, columns = 14;
     [SerializeField] private Door doorPrefab;
     [SerializeField] private Wall wallPrefab;
-    [SerializeField] private Block blockPrefab;
+    [SerializeField] private List<BlockPrefabEntry> blockPrefabs;
     [SerializeField] private GameObject Grid;
+    private Dictionary<string, Block> blockPrefabDict;
     private int[,] mapBorderData =
     {
         {0,1,0,0,2,0,1,0,4,0,0,1,0,1},
@@ -28,13 +30,23 @@ public class MapController : MonoBehaviour
         {0,1,0,1,0,0,0,0,0,0,1,0,1,0},
         {0,1,0,1,0,0,0,0,0,0,1,0,1,0},
         {0,1,0,1,0,0,0,0,0,0,1,0,1,0},
-    };                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+    };     
+
+    private void Awake()
+    {
+        blockPrefabDict = new Dictionary<string, Block>();
+        foreach(var entry in blockPrefabs)
+        {
+            blockPrefabDict[entry.key] = entry.prefab;
+        }
+    }
+
     private void Start()
     {
         GenWalls();
         GenDoors();
         GenGrid();
-        GenBlocks();
+        //GenBlocks();
     }
     private void GenWalls()
     {
@@ -56,7 +68,7 @@ public class MapController : MonoBehaviour
                 var wallRight = Instantiate(wallPrefab, transform);
                 wallRight.transform.position = transform.position + new Vector3(offsetX, 0, 0);
                 wallRight.transform.position += new Vector3(0, offsetY, 0);
-                wallRight.transform.localRotation = Quaternion.Euler(0, 0, 90); 
+                wallRight.transform.localRotation = Quaternion.Euler(0, 0, 270); 
             }
         }
         for (int j = 0; j < columns; j++)
@@ -69,6 +81,7 @@ public class MapController : MonoBehaviour
                 var wallTop = Instantiate(wallPrefab, transform);
                 wallTop.transform.position = transform.position + new Vector3(0, offsetY, 0);
                 wallTop.transform.position += new Vector3(offsetX, 0, 0);
+                wallTop.transform.localRotation = Quaternion.Euler(0, 0, 0);
             }
 
             if(mapBorderData[rows - 1, j] == 0)
@@ -76,6 +89,7 @@ public class MapController : MonoBehaviour
                 var wallBottom = Instantiate(wallPrefab, transform);
                 wallBottom.transform.position = transform.position - new Vector3(0, offsetY, 0);
                 wallBottom.transform.position += new Vector3(offsetX, 0, 0);
+                wallBottom.transform.localRotation = Quaternion.Euler(0, 0, 180);
             }
         }
     }
@@ -118,21 +132,21 @@ public class MapController : MonoBehaviour
             }
         }
     }
-    private void GenBlocks()
-    {
-        for(int i = 0; i < rows; i++)
-        {
-            for(int j = 0; j < columns; j++)
-            {
-                if(mapBlockData[i, j] != 0)
-                {
-                    var block = Instantiate(blockPrefab, transform);
-                    block.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, i - (rows - 1) / 2f, 0);
-                    block.SetColorBlock(GetColorType(mapBlockData[i, j]));
-                }
-            }
-        }
-    }
+    // private void GenBlocks()
+    // {
+    //     for(int i = 0; i < rows; i++)
+    //     {
+    //         for(int j = 0; j < columns; j++)
+    //         {
+    //             if(mapBlockData[i, j] != 0)
+    //             {
+    //                 /var block = Instantiate(blockPrefab, transform);
+    //                 block.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, i - (rows - 1) / 2f, 0);
+    //                 block.SetColorBlock(GetColorType(mapBlockData[i, j]));
+    //             }
+    //         }
+    //     }
+    // }
     private void GenGrid()
     {
         for(int i = 0; i < rows; i++)
@@ -148,4 +162,11 @@ public class MapController : MonoBehaviour
     {
         return (ColorType)value;
     }
+}
+
+[System.Serializable]
+public class BlockPrefabEntry
+{
+    public string key;
+    public Block prefab;
 }

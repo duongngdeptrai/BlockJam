@@ -33,22 +33,9 @@ public class BlockMove : MonoBehaviour
 
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
-        Vector3 targetPos = mousePos + offset;
-        Vector2 direction = targetPos - transform.position;
-        float distance = direction.magnitude;
-        if (distance == 0) return;
-        direction.Normalize();
-        if (!IsColliding(direction, distance))
-        {
-            rb.MovePosition(targetPos);
-        }
-        else
-        {
-            offset = transform.position - mousePos;
-        }
         Vector3 delta = mousePos - lastMousePos;
 
-        targetPos = rb.position + (Vector2)delta;
+        targetPos = rb.position + 1.5f * (Vector2)delta;
 
         lastMousePos = mousePos;
     }
