@@ -1,8 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UIElements;
 public class BlockMove : MonoBehaviour
 {
     [SerializeField] private BoxCollider2D boxCollider;
+    [SerializeField] private Block block;
     private bool isDragging = false;
     private Vector3 offset;
     private Vector3 targetPos;

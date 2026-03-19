@@ -183,6 +183,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxCollider: {fileID: 1708345584720057955}
+  block: {fileID: 558174737902361713}
 --- !u!50 &6620692174634049082
 Rigidbody2D:
   serializedVersion: 5

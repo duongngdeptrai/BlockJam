@@ -7,6 +7,9 @@ public abstract class Block : MonoBehaviour
     [SerializeField] protected SpriteRenderer[] Img;
     [SerializeField] protected int sizeX = 1, sizeY = 1;
 
+    public int SizeX { get => sizeX; }
+    public int SizeY { get => sizeY; }
+
     private bool isClicked = false;
 
     protected virtual void OnSwapSize()
