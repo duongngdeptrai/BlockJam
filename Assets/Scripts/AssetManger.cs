@@ -15,3 +15,17 @@ public static class ColorManager
         };
     }
 }
+public static class RotationManager
+{
+    public static float GetRotation(Direction dir)
+    {
+        return dir switch
+        {
+            Direction.Up => 0,
+            Direction.Right => 270,
+            Direction.Down => 180,
+            Direction.Left => 90,
+            _ => 0,
+        };
+    }
+}

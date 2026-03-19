@@ -224,6 +224,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Img:
   - {fileID: 3734264376614986466}
+  sizeX: 1
+  sizeY: 4
 --- !u!1 &8012570495229479901
 GameObject:
   m_ObjectHideFlags: 0
