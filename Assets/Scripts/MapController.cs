@@ -10,7 +10,9 @@ public class MapController : MonoBehaviour
     [SerializeField] private Wall wallPrefab;
     [SerializeField] private List<BlockPrefabEntry> blockPrefabs;
     [SerializeField] private GameObject Grid;
+    [SerializeField] private string levelJsonFileName = "Levels/level1.json";
     private Dictionary<string, Block> blockPrefabDict;
+    private LevelData currentLevelData;
     private int[,] mapBorderData =
     {
         {0,1,0,0,2,0,1,0,4,0,0,1,0,1},
@@ -43,10 +45,18 @@ public class MapController : MonoBehaviour
 
     private void Start()
     {
+        // Load level data from JSON
+        currentLevelData = LevelLoader.LoadLevel(levelJsonFileName);
+        if (currentLevelData != null)
+        {
+            rows = currentLevelData.rows;
+            columns = currentLevelData.columns;
+        }
+
         GenWalls();
         GenDoors();
         GenGrid();
-        //GenBlocks();
+        GenBlocks();
     }
     private void GenWalls()
     {
@@ -132,21 +142,45 @@ public class MapController : MonoBehaviour
             }
         }
     }
-    // private void GenBlocks()
-    // {
-    //     for(int i = 0; i < rows; i++)
-    //     {
-    //         for(int j = 0; j < columns; j++)
-    //         {
-    //             if(mapBlockData[i, j] != 0)
-    //             {
-    //                 /var block = Instantiate(blockPrefab, transform);
-    //                 block.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, i - (rows - 1) / 2f, 0);
-    //                 block.SetColorBlock(GetColorType(mapBlockData[i, j]));
-    //             }
-    //         }
-    //     }
-    // }
+    private void GenBlocks()
+    {
+        if (currentLevelData == null || currentLevelData.blocks == null)
+        {
+            Debug.LogWarning("No block data loaded from JSON");
+            return;
+        }
+
+        foreach (var blockData in currentLevelData.blocks)
+        {
+            // Check if the block type exists in dictionary
+            if (!blockPrefabDict.ContainsKey(blockData.blockType))
+            {
+                Debug.LogWarning($"Block type '{blockData.blockType}' not found in block prefabs");
+                continue;
+            }
+
+            // Instantiate the block
+            Block blockPrefab = blockPrefabDict[blockData.blockType];
+            Block block = Instantiate(blockPrefab, transform);
+
+            // Set position (convert row/column to world position)
+            block.transform.position = transform.position + new Vector3(
+                blockData.column - (columns - 1) / 2f,
+                blockData.row - (rows - 1) / 2f,
+                0
+            );
+
+            // Parse and set color
+            if (System.Enum.TryParse<ColorType>(blockData.color, out ColorType colorType))
+            {
+                block.SetColorBlock(colorType);
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid color type '{blockData.color}' for block at row {blockData.row}, column {blockData.column}");
+            }
+        }
+    }
     private void GenGrid()
     {
         for(int i = 0; i < rows; i++)

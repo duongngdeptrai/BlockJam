@@ -420,8 +420,21 @@ MonoBehaviour:
   columns: 14
   doorPrefab: {fileID: 5829565423032929576, guid: 47b5d55180c7ec946bcffde73947f6f4, type: 3}
   wallPrefab: {fileID: 2704679083468816726, guid: 05ae541578c573849aabc553fd71ed0e, type: 3}
-  blockPrefab: {fileID: 2690061276351221419, guid: 47937af905a11a842b98deb497057e3f, type: 3}
+  blockPrefabs:
+  - key: block1x1
+    prefab: {fileID: 2830642052092586016, guid: f9e73e61c8df57d4ab43ab998a91525a, type: 3}
+  - key: block1x2
+    prefab: {fileID: 961919230911761337, guid: 9dd970cd0daaa3a43b43c1732d64ec76, type: 3}
+  - key: block1x3
+    prefab: {fileID: 7346675459831854345, guid: 80b3586bf05110341a43e91d8b6af2e7, type: 3}
+  - key: block1x4
+    prefab: {fileID: 8844608396294091722, guid: 3b633bccfaf82b34e8bd43be127e2301, type: 3}
+  - key: block2x2
+    prefab: {fileID: -1361907653943060723, guid: ac0341c319c310e4faa777eecc326098, type: 3}
+  - key: block2x3
+    prefab: {fileID: 558174737902361713, guid: fc9e2243c8136f548a937113d52d4661, type: 3}
   Grid: {fileID: 230190785796644177, guid: 297f3da18b86ecb4e8c4edf723d21d55, type: 3}
+  levelJsonFileName: Levels/level1.json
 --- !u!1 &1196016238
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,38 @@
+{
+  "level": {
+    "rows": 7,
+    "columns": 14,
+    "blocks": [
+      {
+        "blockType": "block1x1",
+        "row": 1,
+        "column": 1,
+        "color": "Red"
+      },
+      {
+        "blockType": "block1x1",
+        "row": 1,
+        "column": 2,
+        "color": "Green"
+      },
+      {
+        "blockType": "block2x2",
+        "row": 3,
+        "column": 5,
+        "color": "Blue"
+      },
+      {
+        "blockType": "block1x2",
+        "row": 4,
+        "column": 10,
+        "color": "Yellow"
+      },
+      {
+        "blockType": "block1x3",
+        "row": 5,
+        "column": 2,
+        "color": "Purple"
+      }
+    ]
+  }
+}
