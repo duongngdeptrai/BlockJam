@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 6620692174634049082}
   m_Layer: 0
   m_Name: Block
-  m_TagString: Untagged
+  m_TagString: Block
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -182,6 +182,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxCollider: {fileID: 1708345584720057955}
+  block: {fileID: 0}
 --- !u!50 &6620692174634049082
 Rigidbody2D:
   serializedVersion: 5

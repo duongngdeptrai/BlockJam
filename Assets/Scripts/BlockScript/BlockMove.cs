@@ -37,7 +37,7 @@ public class BlockMove : MonoBehaviour
         mousePos.z = 0;
         Vector3 delta = mousePos - lastMousePos;
 
-        targetPos = rb.position + 1.5f * (Vector2)delta;
+        targetPos = rb.position + 2f * (Vector2)delta;
 
         lastMousePos = mousePos;
     }
@@ -46,6 +46,10 @@ public class BlockMove : MonoBehaviour
     {
         if (!isDragging || !hasTarget) return;
         rb.MovePosition(targetPos);
+    }
+    public void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log($"[BlockMove] Collision with {collision.collider.name} at {collision.GetContact(0).point}");
     }
 
     private void OnMouseUp()
@@ -59,6 +63,10 @@ public class BlockMove : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log($"[BlockMove] Collision with {collision.collider.name} at {collision.GetContact(0).point}");
+    }
+    private void OriggerEnter(Collider other)
+    {
+        Debug.Log($"[BlockMove] Trigger with {other.name} at {other.ClosestPoint(transform.position)}");
     }
 
     private void OnTriggerEnter2D(Collider2D other)
