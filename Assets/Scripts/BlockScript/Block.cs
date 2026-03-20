@@ -4,10 +4,19 @@ using UnityEngine;
 
 public abstract class Block : MonoBehaviour
 {
+    void Awake()
+    {
+        SpriteRenderer[] sprites = GetComponentsInChildren<SpriteRenderer>();
+
+        foreach (var img in sprites)
+        {
+            img.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+        }
+    }
     [SerializeField] protected SpriteRenderer[] Img;
     [SerializeField] protected int sizeX = 1, sizeY = 1;
 
-    private ColorType colorType; // Lưu giữ data màu thật 
+    public ColorType colorType; // Lưu giữ data màu thật 
 
     public int SizeX { get => sizeX; }
     public int SizeY { get => sizeY; }

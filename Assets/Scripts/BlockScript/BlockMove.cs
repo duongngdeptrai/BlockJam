@@ -12,6 +12,13 @@ public class BlockMove : MonoBehaviour
     private Rigidbody2D rb;
     private Vector3 lastMousePos;
     private bool hasTarget = false;
+
+    // Các biến phục vụ Auto-Exit
+    public bool IsAutoExiting { get; private set; } = false;
+    private Vector3 autoExitDirection;
+    private Vector3 triggerStartPos;
+    private float exitDistance = 3f;
+    private float exitSpeed = 6f;
     private void Start()
     {
         cam = Camera.main;
@@ -20,6 +27,8 @@ public class BlockMove : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (IsAutoExiting) return;
+
         isDragging = true;
         rb.bodyType = RigidbodyType2D.Dynamic ; 
         rb.gravityScale = 0;
@@ -31,20 +40,20 @@ public class BlockMove : MonoBehaviour
 
     private void OnMouseDrag()
     {
-        if (!isDragging) return;
+        if (IsAutoExiting || !isDragging) return;
 
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
         Vector3 delta = mousePos - lastMousePos;
 
-        targetPos = rb.position + 2f * (Vector2)delta;
+        targetPos = rb.position + 4f * (Vector2)delta;
 
         lastMousePos = mousePos;
     }
 
     private void FixedUpdate()
     {
-        if (!isDragging || !hasTarget) return;
+        if (IsAutoExiting || !isDragging || !hasTarget) return;
         rb.MovePosition(targetPos);
     }
     public void OnCollisionEnter(Collision collision)
@@ -54,6 +63,8 @@ public class BlockMove : MonoBehaviour
 
     private void OnMouseUp()
     {
+        if (IsAutoExiting) return;
+
         isDragging = false;
         rb.bodyType = RigidbodyType2D.Static;
         hasTarget = false;
@@ -62,11 +73,24 @@ public class BlockMove : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log($"[BlockMove] Collision with {collision.collider.name} at {collision.GetContact(0).point}");
+        if(collision.collider.CompareTag("Door"))
+        {
+            if(block.ColorType == collision.collider.GetComponent<Door>().ColorType)
+            {
+                collision.collider.isTrigger =  true ; 
+            }
+        }
+        // Debug.Log($"Self: {gameObject.name}");
+        // Debug.Log($"Other: {collision.collider.gameObject.name}");
     }
-    private void OriggerEnter(Collider other)
+
+    private void OnCollisionExit2D(Collision2D collision)
     {
-        Debug.Log($"[BlockMove] Trigger with {other.name} at {other.ClosestPoint(transform.position)}");
+        Debug.Log($"[BlockMove] Exit collision with {collision.collider.name}");
+        if(collision.collider.CompareTag("Door"))
+        {
+            collision.collider.isTrigger =  false ; 
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -79,5 +103,34 @@ public class BlockMove : MonoBehaviour
         position.x = Mathf.Round(position.x - 0.5f) + 0.5f;
         position.y = Mathf.Round(position.y);
         rb.position = position;
+    }
+
+    public void StartAutoExit(Vector3 exitDirection, Vector3 triggerPos)
+    {
+        IsAutoExiting = true;
+        isDragging = false;
+        hasTarget = false;
+        triggerStartPos = triggerPos;
+        autoExitDirection = exitDirection.normalized; // Nhận thẳng hướng từ transform của cửa
+        
+        // Tắt vật lý, va chạm
+        rb.bodyType = RigidbodyType2D.Static;
+        Collider2D coll = GetComponent<Collider2D>();
+        if (coll != null) coll.enabled = false;
+    }
+
+    private void Update()
+    {
+        if (IsAutoExiting)
+        {
+            // Di chuyển tự động
+            transform.position += autoExitDirection * exitSpeed * Time.deltaTime;
+            
+            // Xóa block cứng khoảng cách exitDistance khỏi DoorTrigger (ví dụ 3 đơn vị)
+            if (Vector3.Distance(transform.position, triggerStartPos) >= exitDistance)
+            {
+                Destroy(gameObject);                    
+            }
+        }
     }
 }
