@@ -19,6 +19,14 @@ public class BlockMove : MonoBehaviour
     private Vector3 triggerStartPos;
     private float exitDistance = 3f;
     private float exitSpeed = 6f;
+
+    // Door check logic variables
+    private bool closeDoor = false;
+    private Door currentDoor;
+    private Collider2D doorCollider;
+    private Collider2D blockCollider;
+    private float doorEnterDepth = 0.1f;
+
     private void Start()
     {
         cam = Camera.main;
@@ -53,12 +61,21 @@ public class BlockMove : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (IsAutoExiting || !isDragging || !hasTarget) return;
-        rb.MovePosition(targetPos);
+        if (IsAutoExiting || !hasTarget) return;
+        
+        if (isDragging)
+        {
+            rb.MovePosition(targetPos);
+        }
+
+        if (closeDoor)
+        {
+            CheckDoorEnterDepth();
+        }
     }
     public void OnCollisionEnter(Collision collision)
     {
-        Debug.Log($"[BlockMove] Collision with {collision.collider.name} at {collision.GetContact(0).point}");
+        //Debug.Log($"[BlockMove] Collision with {collision.collider.name} at {collision.GetContact(0).point}");
     }
 
     private void OnMouseUp()
@@ -75,27 +92,52 @@ public class BlockMove : MonoBehaviour
     {
         if(collision.collider.CompareTag("Door"))
         {
-            if(block.ColorType == collision.collider.GetComponent<Door>().ColorType)
+            Door door = collision.collider.GetComponent<Door>();
+            if(door != null && block.ColorType == door.ColorType)
             {
-                collision.collider.isTrigger =  true ; 
+                doorCollider = collision.collider;
+                doorCollider.isTrigger = true;
+                currentDoor = door;
+                closeDoor = true;
+                blockCollider = boxCollider;
             }
         }
-        // Debug.Log($"Self: {gameObject.name}");
-        // Debug.Log($"Other: {collision.collider.gameObject.name}");
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
+    private void OnTriggerExit2D(Collider2D other)
     {
-        Debug.Log($"[BlockMove] Exit collision with {collision.collider.name}");
-        if(collision.collider.CompareTag("Door"))
+        if (closeDoor && other == doorCollider)
         {
-            collision.collider.isTrigger =  false ; 
-        }
-    }
+            // Kiểm tra xem block vọt qua mặt cửa (vượt ngục) hay lùi lại (quay xe)
+            Vector3 exitDir = Vector3.zero;
+            switch (currentDoor.Direction)
+            {
+                case Direction.Up: exitDir = Vector3.up; break;
+                case Direction.Down: exitDir = Vector3.down; break;
+                case Direction.Right: exitDir = Vector3.right; break;
+                case Direction.Left: exitDir = Vector3.left; break;
+            }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        Debug.Log($"[BlockMove] Trigger with {other.name} at {other.ClosestPoint(transform.position)}");
+            Vector3 directionToBlock = transform.position - currentDoor.transform.position;
+            
+            // Nếu toạ độ đi thuận hướng cửa (vọt rất xa qua cửa)
+            if (Vector3.Dot(directionToBlock, exitDir) > 0.1f)
+            {
+                currentDoor.PlayParticles();
+                closeDoor = false;
+                doorCollider.isTrigger = false;
+                StartAutoExit(exitDir, currentDoor.transform.position);
+                doorCollider = null;
+                currentDoor = null;
+                return;
+            }
+
+            // Xử lý fallback cho trường hợp người chơi kéo block lùi lại ra ngoài (quay xe)
+            closeDoor = false;
+            if (doorCollider != null) doorCollider.isTrigger = false;
+            doorCollider = null;
+            currentDoor = null;
+        }
     }
     public void SnapToGrid()
     {
@@ -104,7 +146,50 @@ public class BlockMove : MonoBehaviour
         position.y = Mathf.Round(position.y);
         rb.position = position;
     }
+    public void CheckDoorEnterDepth()
+    {
+        if (currentDoor == null || doorCollider == null || blockCollider == null)
+        {
+            closeDoor = false;
+            return;
+        }
 
+        Bounds blockBounds = blockCollider.bounds;
+        Bounds doorBounds = doorCollider.bounds;
+        
+        bool isEntered = false;
+        Vector3 exitDir = Vector3.zero;
+
+        switch (currentDoor.Direction)
+        {
+            case Direction.Up:
+                isEntered = blockBounds.max.y >= doorBounds.min.y + doorEnterDepth;
+                exitDir = Vector3.up;
+                break;
+            case Direction.Down:
+                isEntered = blockBounds.min.y <= doorBounds.max.y - doorEnterDepth;
+                exitDir = Vector3.down;
+                break;
+            case Direction.Right:
+                isEntered = blockBounds.max.x >= doorBounds.min.x + doorEnterDepth;
+                exitDir = Vector3.right;
+                break;
+            case Direction.Left:
+                isEntered = blockBounds.min.x <= doorBounds.max.x - doorEnterDepth;
+                exitDir = Vector3.left;
+                break;
+        }
+
+        if (isEntered)
+        {
+            currentDoor.PlayParticles();
+            closeDoor = false;
+            doorCollider.isTrigger = false;
+            StartAutoExit(exitDir, currentDoor.transform.position);
+            doorCollider = null;
+            currentDoor = null;
+        }
+    }
     public void StartAutoExit(Vector3 exitDirection, Vector3 triggerPos)
     {
         IsAutoExiting = true;
