@@ -136,7 +136,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   colorType: 0
-  size: 0
+  size: 1
   direction: 0
   spriteRenderer: {fileID: 3734264376614986466}
   particleSystems:

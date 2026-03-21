@@ -88,12 +88,28 @@ public class BlockMove : MonoBehaviour
         SnapToGrid();
     }
 
+    private bool CheckFitDoorSize(Door door)
+    {
+        if (door == null) return false;
+        if (block.ColorType != door.ColorType) return false;
+
+        int actualDoorSize = door.Size <= 0 ? 1 : door.Size; 
+        
+        if (door.Direction == Direction.Up || door.Direction == Direction.Down)
+            if (block.SizeX > actualDoorSize) return false; 
+                
+        if (door.Direction == Direction.Right || door.Direction == Direction.Left)
+            if (block.SizeY > actualDoorSize) return false; 
+
+        return true;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.collider.CompareTag("Door"))
         {
             Door door = collision.collider.GetComponent<Door>();
-            if(door != null && block.ColorType == door.ColorType)
+            if(CheckFitDoorSize(door))
             {
                 doorCollider = collision.collider;
                 doorCollider.isTrigger = true;
@@ -145,6 +161,31 @@ public class BlockMove : MonoBehaviour
         position.x = Mathf.Round(position.x - 0.5f) + 0.5f;
         position.y = Mathf.Round(position.y);
         rb.position = position;
+        transform.position = position; // Ép tọa độ ghim lập tức để Bounds không bị lag 1 frame
+
+        Physics2D.SyncTransforms(); // Cập nhật hitbox BoxCollider2D ngay tức khắc
+
+        // Quét quanh vị trí mới Snap xem có rà trúng cửa không (Giống hệt OnCollisionEnter2D)
+        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(boxCollider.bounds.center, boxCollider.bounds.size + new Vector3(0.1f, 0.1f, 0f), 0f);
+        
+        foreach (var col in hitColliders)
+        {
+            if (col.CompareTag("Door"))
+            {
+                Door door = col.GetComponent<Door>();
+                if (CheckFitDoorSize(door))
+                {
+                    doorCollider = col;
+                    doorCollider.isTrigger = true;
+                    currentDoor = door;
+                    closeDoor = true;
+                    blockCollider = boxCollider;
+
+                    CheckDoorEnterDepth(); // Kiểm tra độ lún/thẳng hàng và AutoExit ngay!
+                    break; 
+                }
+            }
+        }
     }
     public void CheckDoorEnterDepth()
     {
@@ -160,23 +201,31 @@ public class BlockMove : MonoBehaviour
         bool isEntered = false;
         Vector3 exitDir = Vector3.zero;
 
+        // BƯỚC 2: Tự động AutoExit ngay nếu Block đứng Ở NGOÀI GẦN CỬA, và THẲNG HÀNG (Lọt qua khe).
+        // Cho sai số lệch tọa độ 0.35 unit để linh động.
+        float alignTolerance = 0.1f;
+
         switch (currentDoor.Direction)
         {
             case Direction.Up:
-                isEntered = blockBounds.max.y >= doorBounds.min.y + doorEnterDepth;
                 exitDir = Vector3.up;
+                if (Mathf.Abs(blockBounds.center.x - doorBounds.center.x) < alignTolerance) isEntered = true; // Chạm ngoài + thẳng hàng
+                else if (blockBounds.max.y >= doorBounds.min.y + doorEnterDepth) isEntered = true; // Ép lấn sâu 0.1
                 break;
             case Direction.Down:
-                isEntered = blockBounds.min.y <= doorBounds.max.y - doorEnterDepth;
                 exitDir = Vector3.down;
+                if (Mathf.Abs(blockBounds.center.x - doorBounds.center.x) < alignTolerance) isEntered = true;
+                else if (blockBounds.min.y <= doorBounds.max.y - doorEnterDepth) isEntered = true;
                 break;
             case Direction.Right:
-                isEntered = blockBounds.max.x >= doorBounds.min.x + doorEnterDepth;
                 exitDir = Vector3.right;
+                if (Mathf.Abs(blockBounds.center.y - doorBounds.center.y) < alignTolerance) isEntered = true;
+                else if (blockBounds.max.x >= doorBounds.min.x + doorEnterDepth) isEntered = true;
                 break;
             case Direction.Left:
-                isEntered = blockBounds.min.x <= doorBounds.max.x - doorEnterDepth;
                 exitDir = Vector3.left;
+                if (Mathf.Abs(blockBounds.center.y - doorBounds.center.y) < alignTolerance) isEntered = true;
+                else if (blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) isEntered = true;
                 break;
         }
 

@@ -69,6 +69,7 @@ public partial class MapController : MonoBehaviour
                 door.transform.localRotation = Quaternion.Euler(0, 0, 90);
                 door.UpdateColorImg(GetColorType(mapBorderData[i, 0]));
                 door.Direction = Direction.Left;
+                door.Size = 1;
             }
             if(mapBorderData[i, columns - 1] != 0)
             {
@@ -78,6 +79,7 @@ public partial class MapController : MonoBehaviour
                 door.transform.localRotation = Quaternion.Euler(0, 0, 270);
                 door.UpdateColorImg(GetColorType(mapBorderData[i, columns - 1]));
                 door.Direction = Direction.Right;
+                door.Size = 1;
             }
         }
         for(int j = 0; j < columns; j++)
@@ -89,6 +91,7 @@ public partial class MapController : MonoBehaviour
                 door.transform.localRotation = Quaternion.Euler(0, 0, 0);
                 door.UpdateColorImg(GetColorType(mapBorderData[0, j]));
                 door.Direction = Direction.Up;
+                door.Size = 1;
             }
             if(mapBorderData[rows - 1, j] != 0)
             {
@@ -97,6 +100,7 @@ public partial class MapController : MonoBehaviour
                 door.transform.localRotation = Quaternion.Euler(0, 0, 180);
                 door.UpdateColorImg(GetColorType(mapBorderData[rows - 1, j]));
                 door.Direction = Direction.Down;
+                door.Size = 1;
             }
         }
     }
