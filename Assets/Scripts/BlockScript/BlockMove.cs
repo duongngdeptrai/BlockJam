@@ -40,9 +40,14 @@ public class BlockMove : MonoBehaviour
         isDragging = true;
         rb.bodyType = RigidbodyType2D.Dynamic ; 
         rb.gravityScale = 0;
-        lastMousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-        lastMousePos.z = 0;
-        targetPos = rb.position;
+        
+        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+        mousePos.z = 0;
+        
+        // Ghi lại điểm lệch tay cầm của chuột so với tâm khối Block
+        offset = transform.position - mousePos; 
+        
+        targetPos = transform.position;
         hasTarget = true;
     }
 
@@ -52,11 +57,9 @@ public class BlockMove : MonoBehaviour
 
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
-        Vector3 delta = mousePos - lastMousePos;
 
-        targetPos = rb.position + 4f * (Vector2)delta;
-
-        lastMousePos = mousePos;
+        // Neo target chính xác 100% theo con trỏ chuột (Tỉ lệ 1:1) thay vì x4 delta
+        targetPos = mousePos + offset;
     }
 
     private void FixedUpdate()
@@ -65,7 +68,9 @@ public class BlockMove : MonoBehaviour
         
         if (isDragging)
         {
-            rb.MovePosition(targetPos);
+            // Dùng nội suy (Lerp) để Block trượt kéo theo TargetPos một cách đàn hồi siêu mượt
+            Vector2 smoothedPos = Vector2.Lerp(rb.position, targetPos, Time.fixedDeltaTime * 15f);
+            rb.MovePosition(smoothedPos);
         }
 
         if (closeDoor)
@@ -87,7 +92,7 @@ public class BlockMove : MonoBehaviour
         hasTarget = false;
         SnapToGrid();
     }
-
+    // Kiểm tra kích thước block có vào được cửa không ở đây sau sửa logic chỉ sửa hàm này 
     private bool CheckFitDoorSize(Door door)
     {
         if (door == null) return false;
