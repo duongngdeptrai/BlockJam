@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.IO;
+using System.Collections.Generic;
 
 public class LevelLoader : MonoBehaviour
 {
@@ -9,7 +10,6 @@ public class LevelLoader : MonoBehaviour
         
         if (!File.Exists(path))
         {
-            Debug.LogError($"Level file not found at: {path}");
             return null;
         }
 
@@ -17,12 +17,86 @@ public class LevelLoader : MonoBehaviour
         {
             string json = File.ReadAllText(path);
             LevelDataWrapper wrapper = JsonUtility.FromJson<LevelDataWrapper>(json);
-            return wrapper.level;
+            LevelData level = wrapper.level;
+            
+            ValidateLevelData(level);
+            
+            return level;
         }
         catch (System.Exception e)
         {
             Debug.LogError($"Error loading level from JSON: {e.Message}");
             return null;
         }
+    }
+    
+    private static void ValidateLevelData(LevelData level)
+    {
+        if (level == null) return;
+        
+        // Validate doors
+        if (level.doors != null)
+        {
+            List<DoorSpawnData> validDoors = new List<DoorSpawnData>();
+            foreach (var door in level.doors)
+            {
+                if (!IsValidDoorSpawnData(door, level.rows, level.columns))
+                {
+                    Debug.LogWarning($"Invalid door data skipped: row={door.row}, col={door.column}, type={door.doorType}, color={door.color}");
+                    continue;
+                }
+                validDoors.Add(door);
+            }
+            level.doors = validDoors;
+        }
+        
+        // Validate walls
+        if (level.walls != null)
+        {
+            List<WallSpawnData> validWalls = new List<WallSpawnData>();
+            foreach (var wall in level.walls)
+            {
+                if (!IsValidWallSpawnData(wall, level.rows, level.columns))
+                {
+                    Debug.LogWarning($"Invalid wall data skipped: row={wall.row}, col={wall.column}, dir={wall.direction}");
+                    continue;
+                }
+                validWalls.Add(wall);
+            }
+            level.walls = validWalls;
+        }
+    }
+    
+    private static bool IsValidDoorSpawnData(DoorSpawnData door, int rows, int columns)
+    {
+        if (door.row < 0 || door.row >= rows) return false;
+        if (door.column < 0 || door.column >= columns) return false;
+        if (string.IsNullOrEmpty(door.direction)) return false;
+        if (!IsValidDirection(door.direction)) return false;
+        if (string.IsNullOrEmpty(door.doorType)) return false;
+        if (string.IsNullOrEmpty(door.color)) return false;
+        
+        if (!System.Enum.TryParse<ColorType>(door.color, out _))
+        {
+            Debug.LogWarning($"Door color '{door.color}' cannot be parsed to ColorType enum");
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private static bool IsValidWallSpawnData(WallSpawnData wall, int rows, int columns)
+    {
+        if (wall.row < 0 || wall.row >= rows) return false;
+        if (wall.column < 0 || wall.column >= columns) return false;
+        if (string.IsNullOrEmpty(wall.direction)) return false;
+        if (!IsValidDirection(wall.direction)) return false;
+        
+        return true;
+    }
+    
+    private static bool IsValidDirection(string direction)
+    {
+        return direction == "Up" || direction == "Down" || direction == "Left" || direction == "Right";
     }
 }

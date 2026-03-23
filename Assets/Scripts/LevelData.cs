@@ -11,12 +11,21 @@ public class BlockData
 }
 
 [System.Serializable]
-public class DoorData
+public class DoorSpawnData
 {
     public int row;
     public int column;
-    public string color;
-    public string position; // chưa xong đừng động vào cái doorData này nhé, nó còn đang để tạm đó để test thôi, sau này sẽ sửa lại cho hợp lý hơn
+    public string direction;    // "Up", "Down", "Left", "Right"
+    public string doorType;     // "door1", "door2", "door3", "door4"
+    public string color;         // "Red", "Green", "Blue", "Yellow", "Purple", "Orange", "None"
+}
+
+[System.Serializable]
+public class WallSpawnData
+{
+    public int row;
+    public int column;
+    public string direction;    // "Up", "Down", "Left", "Right"
 }
 
 [System.Serializable]
@@ -25,7 +34,8 @@ public class LevelData
     public int rows;
     public int columns;
     public List<BlockData> blocks = new List<BlockData>();
-    public List<DoorData> doors = new List<DoorData>();
+    public List<DoorSpawnData> doors = new List<DoorSpawnData>();
+    public List<WallSpawnData> walls = new List<WallSpawnData>();
 }
 
 [System.Serializable]

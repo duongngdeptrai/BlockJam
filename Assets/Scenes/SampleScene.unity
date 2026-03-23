@@ -151,6 +151,37 @@ Transform:
   - {fileID: 1196016239}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &184662141
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 184662142}
+  m_Layer: 0
+  m_Name: BlockContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &184662142
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184662141}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1196016239}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -418,7 +449,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 7
   columns: 14
-  doorPrefab: {fileID: 5829565423032929576, guid: 47b5d55180c7ec946bcffde73947f6f4, type: 3}
+  doorPrefabs:
+  - key: door1
+    prefab: {fileID: 6583828155685585138, guid: 7e43d5fe9f3837040a3006333212fb79, type: 3}
+  - key: door2
+    prefab: {fileID: 3368668404477367396, guid: 707d37a0a40f70f43ae1ef095507ff8d, type: 3}
+  - key: door3
+    prefab: {fileID: 8874122296770141951, guid: 136c3d982396e274cb9aac45ac2587ed, type: 3}
+  - key: door4
+    prefab: {fileID: 6219174266308495076, guid: 53f876c90f77ce84baf975c9b84a3851, type: 3}
   wallPrefab: {fileID: 2704679083468816726, guid: 05ae541578c573849aabc553fd71ed0e, type: 3}
   blockPrefabs:
   - key: block1x1
@@ -435,6 +474,9 @@ MonoBehaviour:
     prefab: {fileID: 558174737902361713, guid: fc9e2243c8136f548a937113d52d4661, type: 3}
   Grid: {fileID: 230190785796644177, guid: 297f3da18b86ecb4e8c4edf723d21d55, type: 3}
   levelJsonFileName: Levels/level1.json
+  blockContainer: {fileID: 184662142}
+  doorContainer: {fileID: 1914025122}
+  wallContainer: {fileID: 1822256544}
 --- !u!1 &1196016238
 GameObject:
   m_ObjectHideFlags: 0
@@ -466,6 +508,9 @@ Transform:
   m_Children:
   - {fileID: 1700759626}
   - {fileID: 1159067887}
+  - {fileID: 184662142}
+  - {fileID: 1822256544}
+  - {fileID: 1914025122}
   m_Father: {fileID: 81371952}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1615407716
@@ -656,6 +701,68 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1822256543
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1822256544}
+  m_Layer: 0
+  m_Name: WallContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1822256544
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822256543}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1196016239}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1914025121
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1914025122}
+  m_Layer: 0
+  m_Name: DoorContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1914025122
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1914025121}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1196016239}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1929686883
 GameObject:
   m_ObjectHideFlags: 0

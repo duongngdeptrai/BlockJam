@@ -2,98 +2,55 @@ using UnityEngine;
 
 public partial class MapController : MonoBehaviour
 {
-    private int[,] mapBorderData =
-    {
-        {0,1,0,0,2,0,1,0,4,0,0,1,0,1},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,3},
-        {4,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {0,1,0,1,0,5,0,0,1,0,1,0,0,0},
-    };    
     private void GenWalls()
     {
-        for (int i = 0; i < rows; i++)
+        if (currentLevelData == null || currentLevelData.walls == null || currentLevelData.walls.Count == 0)
         {
-            var offsetX = columns / 2f;
-            var offsetY = i - (rows - 1) / 2f;
-
-            if(mapBorderData[i, 0] == 0)
-            {
-                var wallLeft = Instantiate(wallPrefab, transform);
-                wallLeft.transform.position = transform.position - new Vector3(offsetX, 0, 0);
-                wallLeft.transform.position += new Vector3(0, offsetY, 0);
-                wallLeft.transform.localRotation = Quaternion.Euler(0, 0, 90);  
-            }
-            
-            if(mapBorderData[i, columns - 1] == 0)
-            {
-                var wallRight = Instantiate(wallPrefab, transform);
-                wallRight.transform.position = transform.position + new Vector3(offsetX, 0, 0);
-                wallRight.transform.position += new Vector3(0, offsetY, 0);
-                wallRight.transform.localRotation = Quaternion.Euler(0, 0, 270); 
-            }
+            return;
         }
-        for (int j = 0; j < columns; j++)
+
+        foreach (var wallData in currentLevelData.walls)
         {
-            var offsetX = j - (columns - 1) / 2f;
-            var offsetY = rows / 2f; 
-
-            if(mapBorderData[0, j] == 0)
+            if (wallPrefab == null)
             {
-                var wallTop = Instantiate(wallPrefab, transform);
-                wallTop.transform.position = transform.position + new Vector3(0, offsetY, 0);
-                wallTop.transform.position += new Vector3(offsetX, 0, 0);
-                wallTop.transform.localRotation = Quaternion.Euler(0, 0, 0);
+                continue;
             }
 
-            if(mapBorderData[rows - 1, j] == 0)
-            {
-                var wallBottom = Instantiate(wallPrefab, transform);
-                wallBottom.transform.position = transform.position - new Vector3(0, offsetY, 0);
-                wallBottom.transform.position += new Vector3(offsetX, 0, 0);
-                wallBottom.transform.localRotation = Quaternion.Euler(0, 0, 180);
-            }
+            Wall wall = Instantiate(wallPrefab, wallContainer);
+            
+            Vector3 worldPos = CalculateWorldPosition(wallData.row, wallData.column, wallData.direction);
+            wall.transform.position = transform.position + worldPos;
+            
+            Quaternion rotation = DirectionToRotation(wallData.direction);
+            wall.transform.localRotation = rotation;
         }
     }
+
     private void GenDoors()
     {
-        for(int i = 0; i < rows; i++)
+        if (currentLevelData == null || currentLevelData.doors == null || currentLevelData.doors.Count == 0)
         {
-            if(mapBorderData[i, 0] != 0)
-            {
-                var door = Instantiate(doorPrefab, transform);
-                door.transform.position = transform.position - new Vector3(columns / 2f, 0, 0);
-                door.transform.position += new Vector3(0, i - (rows - 1) / 2f, 0);
-                door.transform.localRotation = Quaternion.Euler(0, 0, 90);
-                door.UpdateColorImg(GetColorType(mapBorderData[i, 0]));
-            }
-            if(mapBorderData[i, columns - 1] != 0)
-            {
-                var door = Instantiate(doorPrefab, transform);
-                door.transform.position = transform.position + new Vector3(columns / 2f, 0, 0);
-                door.transform.position += new Vector3(0, i - (rows - 1) / 2f, 0);
-                door.transform.localRotation = Quaternion.Euler(0, 0, 270);
-                door.UpdateColorImg(GetColorType(mapBorderData[i, columns - 1]));
-            }
+            return;
         }
-        for(int j = 0; j < columns; j++)
+
+        foreach (var doorData in currentLevelData.doors)
         {
-            if(mapBorderData[0, j] != 0)
+            if (!doorPrefabDict.ContainsKey(doorData.doorType))
             {
-                var door = Instantiate(doorPrefab, transform);
-                door.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, rows / 2f, 0);
-                door.transform.localRotation = Quaternion.Euler(0, 0, 0);
-                door.UpdateColorImg(GetColorType(mapBorderData[0, j]));
+                continue;
             }
-            if(mapBorderData[rows - 1, j] != 0)
-            {
-                var door = Instantiate(doorPrefab, transform);
-                door.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, -rows / 2f, 0);
-                door.transform.localRotation = Quaternion.Euler(0, 0, 180);
-                door.UpdateColorImg(GetColorType(mapBorderData[rows - 1, j]));
-            }
+
+            Door doorPrefab = doorPrefabDict[doorData.doorType];
+            Door door = Instantiate(doorPrefab, doorContainer);
+            
+            Vector3 worldPos = CalculateWorldPosition(doorData.row, doorData.column, doorData.direction);
+            door.transform.position = transform.position + worldPos;
+            
+            Quaternion rotation = DirectionToRotation(doorData.direction);
+            door.transform.localRotation = rotation;
+            
+            ColorType colorType = GetColorTypeFromString(doorData.color);
+            door.UpdateColorImg(colorType);
         }
     }
     private void GenBlocks()
@@ -110,11 +67,11 @@ public partial class MapController : MonoBehaviour
                 continue;
             }
             Block blockPrefab = blockPrefabDict[blockData.blockType];
-            Block block = Instantiate(blockPrefab, transform);
+            Block block = Instantiate(blockPrefab, blockContainer);
 
             block.transform.position = transform.position + new Vector3(
                 blockData.column - (columns - 1) / 2f,
-                blockData.row - (rows - 1) / 2f,
+                -(blockData.row - (rows - 1) / 2f),
                 0
             );
             if (System.Enum.TryParse<ColorType>(blockData.color, out ColorType colorType))
@@ -134,15 +91,53 @@ public partial class MapController : MonoBehaviour
             }
         }
     }
-    private ColorType GetColorType(int value)
-    {
-        return (ColorType)value;
-    }
-}
 
-[System.Serializable]
-public class BlockPrefabEntry
-{
-    public string key;
-    public Block prefab;
+    private Vector3 CalculateWorldPosition(int row, int column, string Direction )
+    {
+        Vector3 pos =  new Vector3(
+            +(column - (columns - 1) / 2f),
+            -(row - (rows - 1) / 2f),
+            0
+        );
+        switch (Direction)
+        {
+            case "Down":
+                return pos + new Vector3(0, -0.5f, 0);
+            case "Up":
+                return pos + new Vector3(0, +0.5f, 0);
+            case "Left":
+                return pos + new Vector3(-0.5f, 0, 0);
+            case "Right":
+                return pos + new Vector3(0.5f, 0, 0);
+            default:
+                return pos;
+        }
+    }
+
+    private Quaternion DirectionToRotation(string direction)
+    {
+        switch (direction)
+        {
+            case "Down":
+                return Quaternion.Euler(0, 180, 180);
+            case "Up":
+                return Quaternion.Euler(0, 0, 0);
+            case "Left":
+                return Quaternion.Euler(180, 0, 90);
+            case "Right":
+                return Quaternion.Euler(0, 0, 270);
+            default:
+                return Quaternion.Euler(0, 0, 0);
+        }
+    }
+
+    private ColorType GetColorTypeFromString(string colorString)
+    {
+        if (System.Enum.TryParse<ColorType>(colorString, out ColorType colorType))
+        {
+            return colorType;
+        }
+        
+        return ColorType.None;
+    }
 }
