@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8996720126132327789}
   - component: {fileID: 4342883680270965609}
-  - component: {fileID: 2884372570185067471}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -79,19 +78,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 0.027948797}
   m_EdgeRadius: 0
---- !u!114 &2884372570185067471
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3501525875131077421}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0befa056d6b714848b50b9e26ae4c5d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  exitVfxPrefab: {fileID: 8464603776739441285, guid: 7530c8e7509f65944b39db34871246f7, type: 3}
 --- !u!1 &5307465790361900216
 GameObject:
   m_ObjectHideFlags: 0
@@ -275,6 +261,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   size: 1
   spriteRenderer: {fileID: 3734264376614986466}
+  particleSystems: []
 --- !u!1 &6794500880242357658
 GameObject:
   m_ObjectHideFlags: 0

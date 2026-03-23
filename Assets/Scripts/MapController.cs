@@ -14,6 +14,7 @@ public partial class MapController : MonoBehaviour
     [SerializeField] private Transform blockContainer;
     [SerializeField] private Transform doorContainer;
     [SerializeField] private Transform wallContainer;
+    [SerializeField] private Transform gridContainer;
     private Dictionary<string, Door> doorPrefabDict;
     private Dictionary<string, Block> blockPrefabDict;
     private LevelData currentLevelData;

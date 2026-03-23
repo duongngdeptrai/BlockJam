@@ -86,7 +86,7 @@ public partial class MapController : MonoBehaviour
         {
             for(int j = 0; j < columns; j++)
             {
-                var grid = Instantiate(Grid, transform);
+                var grid = Instantiate(Grid, gridContainer);
                 grid.transform.position = transform.position + new Vector3(j - (columns - 1) / 2f, i - (rows - 1) / 2f, 0);
             }
         }
