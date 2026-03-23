@@ -33,6 +33,7 @@ public class LevelData
 {
     public int rows;
     public int columns;
+    public float timeLimit = 60f;  // Thời gian giới hạn của level (tính bằng giây)
     public List<BlockData> blocks = new List<BlockData>();
     public List<DoorSpawnData> doors = new List<DoorSpawnData>();
     public List<WallSpawnData> walls = new List<WallSpawnData>();

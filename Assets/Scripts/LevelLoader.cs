@@ -34,6 +34,13 @@ public class LevelLoader : MonoBehaviour
     {
         if (level == null) return;
         
+        // Validate timeLimit - nếu không có hoặc <= 0, dùng giá trị mặc định
+        if (level.timeLimit <= 0)
+        {
+            Debug.LogWarning($"Invalid timeLimit {level.timeLimit}, using default value 60");
+            level.timeLimit = 60f;
+        }
+        
         // Validate doors
         if (level.doors != null)
         {

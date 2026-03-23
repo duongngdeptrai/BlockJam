@@ -2,6 +2,7 @@
   "level": {
     "rows": 7,
     "columns": 14,
+    "timeLimit": 120,
     "blocks": [
       {
         "blockType": "block1x1",
@@ -129,21 +130,6 @@
     "walls": [
       {
         "row": 0,
-        "column": 7,
-        "direction": "Up"
-      },
-      {
-        "row": 0,
-        "column": 8,
-        "direction": "Up"
-      },
-      {
-        "row": 0,
-        "column": 9,
-        "direction": "Up"
-      },
-      {
-        "row": 0,
         "column": 10,
         "direction": "Up"
       },
@@ -161,21 +147,6 @@
         "row": 0,
         "column": 13,
         "direction": "Up"
-      },
-      {
-        "row": 6,
-        "column": 7,
-        "direction": "Down"
-      },
-      {
-        "row": 6,
-        "column": 8,
-        "direction": "Down"
-      },
-      {
-        "row": 6,
-        "column": 9,
-        "direction": "Down"
       },
       {
         "row": 6,

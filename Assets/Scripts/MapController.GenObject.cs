@@ -23,6 +23,8 @@ public partial class MapController : MonoBehaviour
             
             Quaternion rotation = DirectionToRotation(wallData.direction);
             wall.transform.localRotation = rotation;
+            
+            listWall.Add(wall);
         }
     }
 
@@ -51,6 +53,8 @@ public partial class MapController : MonoBehaviour
             
             ColorType colorType = GetColorTypeFromString(doorData.color);
             door.UpdateColorImg(colorType);
+            
+            listDoor.Add(door);
         }
     }
     private void GenBlocks()
@@ -78,6 +82,8 @@ public partial class MapController : MonoBehaviour
             {
                 block.SetColorBlock(colorType);
             }
+            
+            listBlock.Add(block);
         }
     }
     private void GenGrid()

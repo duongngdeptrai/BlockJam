@@ -18,6 +18,9 @@ public partial class MapController : MonoBehaviour
     private Dictionary<string, Door> doorPrefabDict;
     private Dictionary<string, Block> blockPrefabDict;
     private LevelData currentLevelData;
+    private List<Door> listDoor;
+    private List<Wall> listWall;
+    private List<Block> listBlock;
 
     private void Awake()
     {
@@ -41,9 +44,14 @@ public partial class MapController : MonoBehaviour
         {
             blockPrefabDict[entry.key] = entry.prefab;
         }
+
+        // Initialize lists
+        listDoor = new List<Door>();
+        listWall = new List<Wall>();
+        listBlock = new List<Block>();
     }
 
-    private void Start()
+    private void OnEnable()
     {
         currentLevelData = LevelLoader.LoadLevel(levelJsonFileName);
         if (currentLevelData != null)
@@ -56,6 +64,54 @@ public partial class MapController : MonoBehaviour
         GenDoors();
         GenGrid();
         GenBlocks();
+    }
+
+    public void Clear()
+    {
+        ClearContainer(wallContainer);
+        ClearContainer(doorContainer);
+        ClearContainer(gridContainer);
+        ClearContainer(blockContainer);
+        
+        // Clear lists
+        listDoor.Clear();
+        listWall.Clear();
+        listBlock.Clear();
+        
+        currentLevelData = null;
+    }
+
+    private void ClearContainer(Transform container)
+    {
+        if (container == null)
+            return;
+
+        while (container.childCount > 0)
+        {
+            DestroyImmediate(container.GetChild(0).gameObject);
+        }
+    }
+
+    public void Reset()
+    {
+        Clear();
+
+        currentLevelData = LevelLoader.LoadLevel(levelJsonFileName);
+        if (currentLevelData != null)
+        {
+            rows = currentLevelData.rows;
+            columns = currentLevelData.columns;
+        }
+
+        GenWalls();
+        GenDoors();
+        GenGrid();
+        GenBlocks();
+    }
+
+    public LevelData GetCurrentLevelData()
+    {
+        return currentLevelData;
     }
     
 }
