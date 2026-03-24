@@ -8,7 +8,7 @@ public abstract class Door : MonoBehaviour
     [SerializeField] protected SpriteRenderer spriteRenderer;
     [SerializeField] private List<ParticleSystem> particleSystems;
     protected ColorType colorType;
-    protected Direction direction;
+    public Direction direction;
 
     public ColorType ColorType { get => colorType; set => colorType = value; }
     public int Size { get => size; set => size = value; }
@@ -34,6 +34,46 @@ public abstract class Door : MonoBehaviour
                 var main = ps.main;
                 main.startColor = ColorManager.GetColor(colorType);
                 ps.Play();
+            }
+        }
+    }
+    public void PlayParticles(Bounds blockBounds){
+        if (particleSystems == null) return;
+        foreach (var ps in particleSystems)
+        {
+            switch(direction){
+                case Direction.Up:
+                    if(ps.transform.position.x > blockBounds.min.x && ps.transform.position.x < blockBounds.max.x)
+                    {
+                        var main = ps.main;
+                        main.startColor = ColorManager.GetColor(colorType);
+                        ps.Play();
+                    }
+                    break;
+                case Direction.Down:
+                    if(ps.transform.position.x > blockBounds.min.x && ps.transform.position.x < blockBounds.max.x)
+                    {
+                        var main = ps.main;
+                        main.startColor = ColorManager.GetColor(colorType);
+                        ps.Play();
+                    }
+                    break;
+                case Direction.Right:
+                    if(ps.transform.position.y > blockBounds.min.y && ps.transform.position.y < blockBounds.max.y)
+                    {
+                        var main = ps.main;
+                        main.startColor = ColorManager.GetColor(colorType);
+                        ps.Play();
+                    }
+                    break;
+                case Direction.Left:
+                    if(ps.transform.position.y > blockBounds.min.y && ps.transform.position.y < blockBounds.max.y)
+                    {
+                        var main = ps.main;
+                        main.startColor = ColorManager.GetColor(colorType);
+                        ps.Play();
+                    }
+                    break;
             }
         }
     }

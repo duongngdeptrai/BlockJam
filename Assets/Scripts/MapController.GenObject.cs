@@ -55,6 +55,15 @@ public partial class MapController : MonoBehaviour
             door.UpdateColorImg(colorType);
             
             listDoor.Add(door);
+
+            door.Direction = doorData.direction switch
+            {
+                "Down" => Direction.Down,
+                "Up" => Direction.Up,
+                "Left" => Direction.Left,
+                "Right" => Direction.Right,
+                _ => Direction.Up
+            };
         }
     }
     private void GenBlocks()

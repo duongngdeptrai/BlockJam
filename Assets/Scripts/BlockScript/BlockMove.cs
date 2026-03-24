@@ -16,16 +16,22 @@ public class BlockMove : MonoBehaviour
     // Các biến phục vụ Auto-Exit
     public bool IsAutoExiting { get; private set; } = false;
     private Vector3 autoExitDirection;
+    private Direction autoExitDirectionEnum;
     private Vector3 triggerStartPos;
     private float exitDistance = 3f;
     private float exitSpeed = 6f;
+    private float exitThreshold;
+    float alignTolerance = 0.1f; // offset cho việc check va chạm   
 
     // Door check logic variables
-    private bool closeDoor = false;
+    public bool closeDoor = false;
     private Door currentDoor;
     private Collider2D doorCollider;
     private Collider2D blockCollider;
     private float doorEnterDepth = 0.1f;
+    //bound của door và vật
+    private Bounds doorBounds;
+    private Bounds blockBounds;
 
     private void Start()
     {
@@ -111,45 +117,38 @@ public class BlockMove : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+       
         if(collision.collider.CompareTag("Door"))
         {
             Door door = collision.collider.GetComponent<Door>();
+
             if(CheckFitDoorSize(door))
             {
                 doorCollider = collision.collider;
                 doorCollider.isTrigger = true;
                 currentDoor = door;
-                closeDoor = true;
+                if(CloseDoor()){
+                    ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
+                }
                 blockCollider = boxCollider;
             }
         }
     }
 
+
     private void OnTriggerExit2D(Collider2D other)
     {
+      
         if (closeDoor && other == doorCollider)
         {
             // Kiểm tra xem block vọt qua mặt cửa (vượt ngục) hay lùi lại (quay xe)
-            Vector3 exitDir = Vector3.zero;
-            switch (currentDoor.Direction)
-            {
-                case Direction.Up: exitDir = Vector3.up; break;
-                case Direction.Down: exitDir = Vector3.down; break;
-                case Direction.Right: exitDir = Vector3.right; break;
-                case Direction.Left: exitDir = Vector3.left; break;
-            }
-
+            Vector3 exitDir = GetDirectionVector(currentDoor.Direction);
             Vector3 directionToBlock = transform.position - currentDoor.transform.position;
             
             // Nếu toạ độ đi thuận hướng cửa (vọt rất xa qua cửa)
             if (Vector3.Dot(directionToBlock, exitDir) > 0.1f)
             {
-                currentDoor.PlayParticles();
-                closeDoor = false;
-                doorCollider.isTrigger = false;
-                StartAutoExit(exitDir, currentDoor.transform.position);
-                doorCollider = null;
-                currentDoor = null;
+                ExecuteAutoExit(exitDir);
                 return;
             }
 
@@ -159,6 +158,10 @@ public class BlockMove : MonoBehaviour
             doorCollider = null;
             currentDoor = null;
         }
+        if (doorCollider != null)
+        {
+            doorCollider.isTrigger = false;
+        } 
     }
     public void SnapToGrid()
     {
@@ -191,6 +194,7 @@ public class BlockMove : MonoBehaviour
                 }
             }
         }
+        if (doorCollider != null) doorCollider.isTrigger = false;
     }
     public void CheckDoorEnterDepth()
     {
@@ -200,57 +204,52 @@ public class BlockMove : MonoBehaviour
             return;
         }
 
-        Bounds blockBounds = blockCollider.bounds;
-        Bounds doorBounds = doorCollider.bounds;
-        
+        blockBounds = blockCollider.bounds;
+        doorBounds = doorCollider.bounds;
         bool isEntered = false;
-        Vector3 exitDir = Vector3.zero;
-
-        // BƯỚC 2: Tự động AutoExit ngay nếu Block đứng Ở NGOÀI GẦN CỬA, và THẲNG HÀNG (Lọt qua khe).
-        // Cho sai số lệch tọa độ 0.35 unit để linh động.
-        float alignTolerance = 0.1f;
-
         switch (currentDoor.Direction)
         {
             case Direction.Up:
-                exitDir = Vector3.up;
-                if (Mathf.Abs(blockBounds.center.x - doorBounds.center.x) < alignTolerance) isEntered = true; // Chạm ngoài + thẳng hàng
+                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) isEntered = true; // Thẳng hàng trong phạm vi cửa
                 else if (blockBounds.max.y >= doorBounds.min.y + doorEnterDepth) isEntered = true; // Ép lấn sâu 0.1
                 break;
             case Direction.Down:
-                exitDir = Vector3.down;
-                if (Mathf.Abs(blockBounds.center.x - doorBounds.center.x) < alignTolerance) isEntered = true;
+                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) isEntered = true;
                 else if (blockBounds.min.y <= doorBounds.max.y - doorEnterDepth) isEntered = true;
                 break;
             case Direction.Right:
-                exitDir = Vector3.right;
-                if (Mathf.Abs(blockBounds.center.y - doorBounds.center.y) < alignTolerance) isEntered = true;
+                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) isEntered = true;
                 else if (blockBounds.max.x >= doorBounds.min.x + doorEnterDepth) isEntered = true;
                 break;
             case Direction.Left:
-                exitDir = Vector3.left;
-                if (Mathf.Abs(blockBounds.center.y - doorBounds.center.y) < alignTolerance) isEntered = true;
+                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) isEntered = true;
                 else if (blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) isEntered = true;
                 break;
         }
 
         if (isEntered)
         {
-            currentDoor.PlayParticles();
-            closeDoor = false;
-            doorCollider.isTrigger = false;
-            StartAutoExit(exitDir, currentDoor.transform.position);
-            doorCollider = null;
-            currentDoor = null;
+            ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
         }
     }
-    public void StartAutoExit(Vector3 exitDirection, Vector3 triggerPos)
+    public void StartAutoExit(Vector3 exitDirectionVector, Door door)
     {
         IsAutoExiting = true;
         isDragging = false;
         hasTarget = false;
-        triggerStartPos = triggerPos;
-        autoExitDirection = exitDirection.normalized; // Nhận thẳng hướng từ transform của cửa
+        triggerStartPos = door.transform.position;
+        autoExitDirection = exitDirectionVector.normalized;
+        autoExitDirectionEnum = door.Direction;
+
+        // Tính threshold hủy dựa vào boundary của door
+        Bounds dBounds = door.GetComponent<Collider2D>().bounds;
+        switch (autoExitDirectionEnum)
+        {
+            case Direction.Up:    exitThreshold = dBounds.max.y + exitDistance; break;
+            case Direction.Down:  exitThreshold = dBounds.min.y - exitDistance; break;
+            case Direction.Right: exitThreshold = dBounds.max.x + exitDistance; break;
+            case Direction.Left:  exitThreshold = dBounds.min.x - exitDistance; break;
+        }
         
         // Tắt vật lý, va chạm
         rb.bodyType = RigidbodyType2D.Static;
@@ -260,16 +259,121 @@ public class BlockMove : MonoBehaviour
 
     private void Update()
     {
+
         if (IsAutoExiting)
         {
             // Di chuyển tự động
             transform.position += autoExitDirection * exitSpeed * Time.deltaTime;
-            
             // Xóa block cứng khoảng cách exitDistance khỏi DoorTrigger (ví dụ 3 đơn vị)
-            if (Vector3.Distance(transform.position, triggerStartPos) >= exitDistance)
-            {
+            if (CheckDestroy()){
                 Destroy(gameObject);                    
             }
         }
+        if(doorCollider != null){
+            if(doorCollider.isTrigger == true){
+                if(CheckFitDoorSize(currentDoor))
+                {
+                    if(CloseDoor()){
+                        ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
+                    }
+                    blockCollider = boxCollider;
+                }
+            }
+        }
+    }
+    void DrawBounds(Bounds b, Color color)
+    {
+        Vector3 min = b.min;
+        Vector3 max = b.max;
+
+        Vector3 p1 = new Vector3(min.x, min.y, 0);
+        Vector3 p2 = new Vector3(max.x, min.y, 0);
+        Vector3 p3 = new Vector3(max.x, max.y, 0);
+        Vector3 p4 = new Vector3(min.x, max.y, 0);
+
+        Debug.DrawLine(p1, p2, color , 10f);
+        Debug.DrawLine(p2, p3, color , 10f);
+        Debug.DrawLine(p3, p4, color , 10f);
+        Debug.DrawLine(p4, p1, color , 10f);
+
+         Vector3 c = b.center;
+        float size = 0.1f;
+
+        Debug.DrawLine(c + Vector3.left * size, c + Vector3.right * size, Color.yellow, 5f);
+        Debug.DrawLine(c + Vector3.up * size, c + Vector3.down * size, Color.yellow, 5f);
+    }
+    bool CloseDoor(){
+        if (currentDoor == null || doorCollider == null) return false;
+        blockBounds = boxCollider.bounds;
+        doorBounds = doorCollider.bounds;
+        DrawBounds(blockBounds, Color.yellow);
+        DrawBounds(doorBounds, Color.green);
+
+        switch (currentDoor.Direction)
+        {
+            case Direction.Up:
+                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) return true; // Thẳng hàng trong phạm vi cửa
+                else if (blockBounds.max.y >= doorBounds.min.y + doorEnterDepth) return true; // Ép lấn sâu 0.1
+                break;
+            case Direction.Down:
+                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) return true;
+                else if (blockBounds.min.y <= doorBounds.max.y - doorEnterDepth) return true;
+                break;
+            case Direction.Right:
+                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) return true;
+                else if (blockBounds.max.x >= doorBounds.min.x + doorEnterDepth) return true;
+                break;
+            case Direction.Left:
+                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) return true;
+                else if (blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) return true;
+                break;
+        }
+        return false ; 
+    }   
+    bool CheckDestroy(){
+        blockBounds = boxCollider.bounds; // Cập nhật bounds thực tế theo vị trí hiện tại
+        switch(autoExitDirectionEnum){
+            case Direction.Up:
+                if (blockBounds.max.y >= exitThreshold) return true;
+                break;
+            case Direction.Down:
+                if (blockBounds.min.y <= exitThreshold) return true;
+                break;
+            case Direction.Right:
+                if (blockBounds.max.x >= exitThreshold) return true;
+                break;
+            case Direction.Left:
+                if (blockBounds.min.x <= exitThreshold) return true;
+                break;
+        }
+        return false ; 
+    }
+    private Vector3 GetDirectionVector(Direction dir)
+    {
+        return dir switch
+        {
+            Direction.Up => Vector3.up,
+            Direction.Down => Vector3.down,
+            Direction.Right => Vector3.right,
+            Direction.Left => Vector3.left,
+            _ => Vector3.zero
+        };
+    }
+
+    private void ExecuteAutoExit(Vector3 exitDir)
+    {
+        if (currentDoor == null) return;
+
+        blockBounds = boxCollider.bounds; // Cập nhật bounds thực tế
+        currentDoor.PlayParticles(blockBounds);
+        
+        closeDoor = false; // Ngừng CheckDoorEnterDepth
+        if (doorCollider != null) doorCollider.isTrigger = false;
+        
+        StartAutoExit(exitDir, currentDoor);
+
+        // Clear references
+        doorCollider = null;
+        currentDoor = null;
     }
 }
