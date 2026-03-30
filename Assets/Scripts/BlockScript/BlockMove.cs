@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.UIElements;
 public class BlockMove : MonoBehaviour
 {
-    [SerializeField] private BoxCollider2D boxCollider;
+    [SerializeField] private Collider2D boxCollider; // Hỗ trợ cả BoxCollider2D (block cũ) lẫn CompositeCollider2D (block hình L/T/Z)
     [SerializeField] private Block block;
     private bool isDragging = false;
     private Vector3 offset;
@@ -127,9 +127,7 @@ public class BlockMove : MonoBehaviour
                 doorCollider = collision.collider;
                 doorCollider.isTrigger = true;
                 currentDoor = door;
-                if(CloseDoor()){
-                    ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
-                }
+                closeDoor = true;         // Chỉ ghi nhận, KHÔNG auto-exit khi đang kéo
                 blockCollider = boxCollider;
             }
         }
@@ -196,6 +194,32 @@ public class BlockMove : MonoBehaviour
         }
         if (doorCollider != null) doorCollider.isTrigger = false;
     }
+    private bool CheckBlockAlignedWithDoor(Bounds blockB, Bounds doorB, Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction.Up:
+            case Direction.Down:
+                return (blockB.min.x >= doorB.min.x - alignTolerance && blockB.max.x <= doorB.max.x + alignTolerance);
+            case Direction.Right:
+            case Direction.Left:
+                return (blockB.min.y >= doorB.min.y - alignTolerance && blockB.max.y <= doorB.max.y + alignTolerance);
+        }
+        return false;
+    }
+
+    private bool CheckBlockDepthReached(Bounds blockB, Bounds doorB, Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction.Up:    return (blockB.max.y >= doorB.min.y + doorEnterDepth);
+            case Direction.Down:  return (blockB.min.y <= doorB.max.y - doorEnterDepth);
+            case Direction.Right: return (blockB.max.x >= doorB.min.x + doorEnterDepth);
+            case Direction.Left:  return (blockB.min.x <= doorB.max.x - doorEnterDepth);
+        }
+        return false;
+    }
+
     public void CheckDoorEnterDepth()
     {
         if (currentDoor == null || doorCollider == null || blockCollider == null)
@@ -206,30 +230,24 @@ public class BlockMove : MonoBehaviour
 
         blockBounds = blockCollider.bounds;
         doorBounds = doorCollider.bounds;
-        bool isEntered = false;
-        switch (currentDoor.Direction)
-        {
-            case Direction.Up:
-                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) isEntered = true; // Thẳng hàng trong phạm vi cửa
-                else if (blockBounds.max.y >= doorBounds.min.y + doorEnterDepth) isEntered = true; // Ép lấn sâu 0.1
-                break;
-            case Direction.Down:
-                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) isEntered = true;
-                else if (blockBounds.min.y <= doorBounds.max.y - doorEnterDepth) isEntered = true;
-                break;
-            case Direction.Right:
-                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) isEntered = true;
-                else if (blockBounds.max.x >= doorBounds.min.x + doorEnterDepth) isEntered = true;
-                break;
-            case Direction.Left:
-                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) isEntered = true;
-                else if (blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) isEntered = true;
-                break;
-        }
 
-        if (isEntered)
+        bool isAligned = CheckBlockAlignedWithDoor(blockBounds, doorBounds, currentDoor.Direction);
+        bool isDepthReached = CheckBlockDepthReached(blockBounds, doorBounds, currentDoor.Direction);
+
+        if (isAligned)
         {
             ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
+        }
+        else if (isDepthReached)
+        {
+            // Block lún vào cửa (vượt qua depth) nhưng không qua lọt door bounds -> Bắt thả chuột và SnapToGrid
+            if (isDragging)
+            {
+                isDragging = false;
+                rb.bodyType = RigidbodyType2D.Static;
+                hasTarget = false;
+                SnapToGrid();
+            }
         }
     }
     public void StartAutoExit(Vector3 exitDirectionVector, Door door)
@@ -253,12 +271,21 @@ public class BlockMove : MonoBehaviour
         
         // Tắt vật lý, va chạm
         rb.bodyType = RigidbodyType2D.Static;
-        Collider2D coll = GetComponent<Collider2D>();
-        if (coll != null) coll.enabled = false;
+        if (boxCollider != null) boxCollider.enabled = false;
     }
 
     private void Update()
     {
+        // VẼ DEBUG BOUNDS LIÊN TỤC ĐỂ BẠN QUAN SÁT TRONG SCENE VIEW
+        if (boxCollider != null)
+        {
+            DrawBounds(boxCollider.bounds, Color.yellow);
+        }
+
+        if (doorCollider != null)
+        {
+            DrawBounds(doorCollider.bounds, Color.green);
+        }
 
         if (IsAutoExiting)
         {
@@ -269,7 +296,8 @@ public class BlockMove : MonoBehaviour
                 Destroy(gameObject);                    
             }
         }
-        if(doorCollider != null){
+        // Chỉ check auto-exit khi KHÔNG đang kéo (đã snap vào grid)
+        if(doorCollider != null && !isDragging){
             if(doorCollider.isTrigger == true){
                 if(CheckFitDoorSize(currentDoor))
                 {
@@ -291,16 +319,16 @@ public class BlockMove : MonoBehaviour
         Vector3 p3 = new Vector3(max.x, max.y, 0);
         Vector3 p4 = new Vector3(min.x, max.y, 0);
 
-        Debug.DrawLine(p1, p2, color , 10f);
-        Debug.DrawLine(p2, p3, color , 10f);
-        Debug.DrawLine(p3, p4, color , 10f);
-        Debug.DrawLine(p4, p1, color , 10f);
+        Debug.DrawLine(p1, p2, color , 0.02f);
+        Debug.DrawLine(p2, p3, color , 0.02f);
+        Debug.DrawLine(p3, p4, color , 0.02f);
+        Debug.DrawLine(p4, p1, color , 0.02f);
 
          Vector3 c = b.center;
         float size = 0.1f;
 
-        Debug.DrawLine(c + Vector3.left * size, c + Vector3.right * size, Color.yellow, 5f);
-        Debug.DrawLine(c + Vector3.up * size, c + Vector3.down * size, Color.yellow, 5f);
+        Debug.DrawLine(c + Vector3.left * size, c + Vector3.right * size, Color.yellow, 0.02f);
+        Debug.DrawLine(c + Vector3.up * size, c + Vector3.down * size, Color.yellow, 0.02f);
     }
     bool CloseDoor(){
         if (currentDoor == null || doorCollider == null) return false;
@@ -312,20 +340,20 @@ public class BlockMove : MonoBehaviour
         switch (currentDoor.Direction)
         {
             case Direction.Up:
-                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) return true; // Thẳng hàng trong phạm vi cửa
-                else if (blockBounds.max.y >= doorBounds.min.y + doorEnterDepth) return true; // Ép lấn sâu 0.1
+                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance && 
+                    blockBounds.max.y >= doorBounds.min.y + doorEnterDepth) return true;
                 break;
             case Direction.Down:
-                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance) return true;
-                else if (blockBounds.min.y <= doorBounds.max.y - doorEnterDepth) return true;
+                if (blockBounds.min.x >= doorBounds.min.x - alignTolerance && blockBounds.max.x <= doorBounds.max.x + alignTolerance && 
+                    blockBounds.min.y <= doorBounds.max.y - doorEnterDepth) return true;
                 break;
             case Direction.Right:
-                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) return true;
-                else if (blockBounds.max.x >= doorBounds.min.x + doorEnterDepth) return true;
+                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance && 
+                    blockBounds.max.x >= doorBounds.min.x + doorEnterDepth) return true;
                 break;
             case Direction.Left:
-                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance) return true;
-                else if (blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) return true;
+                if (blockBounds.min.y >= doorBounds.min.y - alignTolerance && blockBounds.max.y <= doorBounds.max.y + alignTolerance && 
+                    blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) return true;
                 break;
         }
         return false ; 
