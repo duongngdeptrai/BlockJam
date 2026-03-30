@@ -184,6 +184,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boxCollider: {fileID: 1708345584720057955}
   block: {fileID: 2830642052092586016}
+  closeDoor: 0
 --- !u!50 &6620692174634049082
 Rigidbody2D:
   serializedVersion: 5
@@ -200,7 +201,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 0
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 195ddaf0a616e584689f1476d29dc09f, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

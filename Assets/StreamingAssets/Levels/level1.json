@@ -35,10 +35,22 @@
         "color": "Orange"
       },
       {
-        "blockType": "block2x3",
+        "blockType": "blockLShape",
         "row": 3,
         "column": 6,
         "color": "Red"
+      },
+      {
+        "blockType": "blockTShape",
+        "row": 4,
+        "column": 7,
+        "color": "Red"
+      },
+      {
+        "blockType": "blockZShape",
+        "row": 6,
+        "column": 3,
+        "color": "Yellow"
       }
     ],
     "doors": [
