@@ -4,25 +4,46 @@ using UnityEngine.UI;
 
 public class GamePlayManager : MonoBehaviour
 {
+    public static GamePlayManager Instance { get; private set; }
+
     [SerializeField] private Button resetButton;
     [SerializeField] private MapController mapController;
     [SerializeField] private TextMeshProUGUI timeText;
     private float currentTime;
     private float timeRemaining;
     private bool isGameRunning;
+    private int currentLevel = 1;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
         if (resetButton != null)
         {
             resetButton.onClick.AddListener(OnResetButtonClicked);
         }
     }
 
+    private void OnDestroy()
+    {
+        if (resetButton != null)
+        {
+            resetButton.onClick.RemoveListener(OnResetButtonClicked);
+        }
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
     private void Start()
     {
-        UpdateTimeDisplay();
-        isGameRunning = true;
     }
 
     private void Update()
@@ -42,7 +63,7 @@ public class GamePlayManager : MonoBehaviour
         UpdateTimeDisplayValue();
     }
 
-    private void OnResetButtonClicked()
+    public void OnResetButtonClicked()
     {
         if (mapController != null)
         {
@@ -52,7 +73,14 @@ public class GamePlayManager : MonoBehaviour
         }
     }
 
-    private void UpdateTimeDisplay()
+    public void InitMap()
+    {
+        UpdateTimeDisplay();
+        isGameRunning = true;
+        mapController.InitMap();
+    }
+
+    public void UpdateTimeDisplay()
     {
         if (mapController == null)
             return;
@@ -66,7 +94,7 @@ public class GamePlayManager : MonoBehaviour
         }
     }
 
-    private void UpdateTimeDisplayValue()
+    public void UpdateTimeDisplayValue()
     {
         if (timeText != null)
         {
@@ -75,8 +103,18 @@ public class GamePlayManager : MonoBehaviour
     }
 
 
-    private void OnTimeOver()
+    public void OnTimeOver()
     {
         Debug.Log("Hết thời gian!");
+    }
+
+    public int GetCurrentLevel()
+    {
+        return currentLevel;    
+    }
+
+    public void SetCurrentLevel(int level)
+    {
+        currentLevel = level;
     }
 }

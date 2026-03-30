@@ -1,8 +1,9 @@
 using UnityEngine;
-using System.Collections.Generic;
-using UnityEngine.UIElements;
+using System;
 public class BlockMove : MonoBehaviour
 {
+    public static event Action<Block> BlockConsumed;
+
     [SerializeField] private BoxCollider2D boxCollider;
     [SerializeField] private Block block;
     private bool isDragging = false;
@@ -266,6 +267,7 @@ public class BlockMove : MonoBehaviour
             transform.position += autoExitDirection * exitSpeed * Time.deltaTime;
             // Xóa block cứng khoảng cách exitDistance khỏi DoorTrigger (ví dụ 3 đơn vị)
             if (CheckDestroy()){
+                NotifyBlockConsumed();
                 Destroy(gameObject);                    
             }
         }
@@ -375,5 +377,10 @@ public class BlockMove : MonoBehaviour
         // Clear references
         doorCollider = null;
         currentDoor = null;
+    }
+
+    private void NotifyBlockConsumed()
+    {
+            BlockConsumed?.Invoke(block);
     }
 }

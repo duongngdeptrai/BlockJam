@@ -53,6 +53,16 @@ public partial class MapController : MonoBehaviour
 
     private void OnEnable()
     {
+        BlockMove.BlockConsumed += OnBlockConsumed;
+    }
+
+    private void OnDisable()
+    {
+        BlockMove.BlockConsumed -= OnBlockConsumed;
+    }
+
+    public void InitMap()
+    {
         currentLevelData = LevelLoader.LoadLevel(levelJsonFileName);
         if (currentLevelData != null)
         {
@@ -112,6 +122,22 @@ public partial class MapController : MonoBehaviour
     public LevelData GetCurrentLevelData()
     {
         return currentLevelData;
+    }
+
+    private void OnBlockConsumed(Block consumedBlock)
+    {
+        if (consumedBlock == null || listBlock == null)
+        {
+            return;
+        }
+
+        listBlock.Remove(consumedBlock);
+
+        if (listBlock.Count == 0)
+        {
+            Debug.Log("All blocks consumed! Level complete!");
+            // You can trigger level completion logic here, such as loading the next level or showing a victory screen.
+        }
     }
     
 }
