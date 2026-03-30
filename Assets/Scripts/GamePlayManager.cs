@@ -75,9 +75,9 @@ public class GamePlayManager : MonoBehaviour
 
     public void InitMap()
     {
+        mapController.InitMap();
         UpdateTimeDisplay();
         isGameRunning = true;
-        mapController.InitMap();
     }
 
     public void UpdateTimeDisplay()
