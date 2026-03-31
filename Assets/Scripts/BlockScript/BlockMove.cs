@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 public class BlockMove : MonoBehaviour
 {
     public static event Action<Block> BlockConsumed;
@@ -29,6 +30,8 @@ public class BlockMove : MonoBehaviour
     private Collider2D doorCollider;
     private Collider2D blockCollider;
     private float doorEnterDepth = 0.1f;
+    [SerializeField] private List<Transform> raycastOrigins = new List<Transform>();
+    [SerializeField] private float raycastDistance = 20f;
     //bound của door và vật
     private Bounds doorBounds;
     private Bounds blockBounds;
@@ -146,7 +149,7 @@ public class BlockMove : MonoBehaviour
             // Nếu toạ độ đi thuận hướng cửa (vọt rất xa qua cửa)
             if (Vector3.Dot(directionToBlock, exitDir) > 0.1f)
             {
-                ExecuteAutoExit(exitDir);
+                TryReleaseCurrentDoor(exitDir);
                 return;
             }
 
@@ -236,7 +239,7 @@ public class BlockMove : MonoBehaviour
 
         if (isAligned)
         {
-            ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
+            TryReleaseCurrentDoor(GetDirectionVector(currentDoor.Direction));
         }
         else if (isDepthReached)
         {
@@ -303,7 +306,7 @@ public class BlockMove : MonoBehaviour
                 if(CheckFitDoorSize(currentDoor))
                 {
                     if(CloseDoor()){
-                        ExecuteAutoExit(GetDirectionVector(currentDoor.Direction));
+                        TryReleaseCurrentDoor(GetDirectionVector(currentDoor.Direction));
                     }
                     blockCollider = boxCollider;
                 }
@@ -386,6 +389,99 @@ public class BlockMove : MonoBehaviour
             Direction.Right => Vector3.right,
             Direction.Left => Vector3.left,
             _ => Vector3.zero
+        };
+    }
+
+    private void TryReleaseCurrentDoor(Vector3 exitDir)
+    {
+        if (CanRaycastReachCurrentDoor())
+        {
+            ExecuteAutoExit(exitDir);
+        }
+    }
+
+    private bool CanRaycastReachCurrentDoor()
+    {
+        if (currentDoor == null || doorCollider == null)
+        {
+            return false;
+        }
+
+        if (raycastOrigins == null || raycastOrigins.Count == 0)
+        {
+            return false;
+        }
+
+        Vector2 dir = GetRayDirection(currentDoor.Direction);
+        if (dir == Vector2.zero)
+        {
+            return false;
+        }
+
+        foreach (Transform origin in raycastOrigins)
+        {
+            if (origin == null)
+            {
+                continue;
+            }
+
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origin.position, dir, raycastDistance);
+            Debug.DrawRay(origin.position, dir * raycastDistance, Color.cyan, 0.05f);
+
+            foreach (RaycastHit2D hit in hits)
+            {
+                if (hit.collider == null)
+                {
+                    continue;
+                }
+
+                // Bỏ qua collider thuộc chính block hiện tại.
+                if (hit.collider.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                // Block khác chắn trước cửa => fail ray này.
+                Block hitBlock = hit.collider.GetComponentInParent<Block>();
+                if (hitBlock != null && hitBlock != block)
+                {
+                    return false;
+                }
+
+                Door hitDoor = hit.collider.GetComponent<Door>();
+                if (hitDoor != null)
+                {
+                    if (hitDoor != currentDoor)
+                    {
+                        return false;
+                    }
+
+                    break;
+                }
+
+                Wall hitWall = hit.collider.GetComponent<Wall>();
+                if (hitWall != null)
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+        }
+
+        return true;
+    }
+
+    private Vector2 GetRayDirection(Direction dir)
+    {
+        return dir switch
+        {
+            Direction.Up => Vector2.up,
+            Direction.Down => Vector2.down,
+            Direction.Right => Vector2.right,
+            Direction.Left => Vector2.left,
+            _ => Vector2.zero
         };
     }
 

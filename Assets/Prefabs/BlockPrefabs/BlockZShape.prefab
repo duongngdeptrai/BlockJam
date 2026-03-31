@@ -918,6 +918,12 @@ MonoBehaviour:
   boxCollider: {fileID: 8867430859960551257}
   block: {fileID: 9008909361750522899}
   closeDoor: 0
+  raycastOrigins:
+  - {fileID: 8904976149266156517}
+  - {fileID: 2497019063807667269}
+  - {fileID: 3287326286585735471}
+  - {fileID: 8956228484720783555}
+  raycastDistance: 20
 --- !u!50 &7022903302430037945
 Rigidbody2D:
   serializedVersion: 5
