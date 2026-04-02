@@ -15,7 +15,10 @@ public class HomeUIManager : MonoBehaviour
 
     private void OnEnable()
     {
-        txtLevel.text = $"Level\n{GamePlayManager.Instance.GetCurrentLevel()}";
+        if (txtLevel != null && GamePlayManager.Instance != null)
+        {
+            txtLevel.text = $"Level\n{GamePlayManager.Instance.GetCurrentLevel()}";
+        }
     }
 
     private void OnPlayButtonClicked()

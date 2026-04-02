@@ -1,3 +1,4 @@
+using System.IO;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEditor.SceneManagement;
@@ -21,6 +22,7 @@ public partial class MapController : MonoBehaviour
     private List<Door> listDoor;
     private List<Wall> listWall;
     private List<Block> listBlock;
+    private int currentLevelIndex = 1;
 
     private void Awake()
     {
@@ -61,19 +63,34 @@ public partial class MapController : MonoBehaviour
         BlockMove.BlockConsumed -= OnBlockConsumed;
     }
 
-    public void InitMap()
+    public bool InitMap()
     {
+        return InitMap(currentLevelIndex);
+    }
+
+    public bool InitMap(int levelIndex)
+    {
+        currentLevelIndex = Mathf.Max(1, levelIndex);
+        levelJsonFileName = $"Levels/level{currentLevelIndex}.json";
+
+        Clear();
+
         currentLevelData = LevelLoader.LoadLevel(levelJsonFileName);
-        if (currentLevelData != null)
+        if (currentLevelData == null)
         {
-            rows = currentLevelData.rows;
-            columns = currentLevelData.columns;
+            Debug.LogError($"Failed to load level data from {levelJsonFileName}");
+            return false;
         }
+
+        rows = currentLevelData.rows;
+        columns = currentLevelData.columns;
 
         GenWalls();
         GenDoors();
         GenGrid();
         GenBlocks();
+
+        return true;
     }
 
     public void Clear()
@@ -102,21 +119,9 @@ public partial class MapController : MonoBehaviour
         }
     }
 
-    public void Reset()
+    public bool Reset()
     {
-        Clear();
-
-        currentLevelData = LevelLoader.LoadLevel(levelJsonFileName);
-        if (currentLevelData != null)
-        {
-            rows = currentLevelData.rows;
-            columns = currentLevelData.columns;
-        }
-
-        GenWalls();
-        GenDoors();
-        GenGrid();
-        GenBlocks();
+        return InitMap(currentLevelIndex);
     }
 
     public LevelData GetCurrentLevelData()

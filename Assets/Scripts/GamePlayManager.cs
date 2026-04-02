@@ -1,4 +1,5 @@
 using TMPro;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,6 +24,8 @@ public class GamePlayManager : MonoBehaviour
         }
 
         Instance = this;
+
+        LoadSavedProgress();
 
         if (resetButton != null)
         {
@@ -67,17 +70,21 @@ public class GamePlayManager : MonoBehaviour
     {
         if (mapController != null)
         {
-            mapController.Reset();
-            UpdateTimeDisplay();
-            isGameRunning = true;
+            if (mapController.Reset())
+            {
+                UpdateTimeDisplay();
+                isGameRunning = true;
+            }
         }
     }
 
     public void InitMap()
     {
-        mapController.InitMap();
-        UpdateTimeDisplay();
-        isGameRunning = true;
+        if (mapController != null && mapController.InitMap(currentLevel))
+        {
+            UpdateTimeDisplay();
+            isGameRunning = true;
+        }
     }
 
     public void UpdateTimeDisplay()
@@ -108,6 +115,26 @@ public class GamePlayManager : MonoBehaviour
         Debug.Log("Hết thời gian!");
     }
 
+    public void AdvanceToNextLevel()
+    {
+        int nextLevel = currentLevel + 1;
+        int maxLevel = GetMaxAvailableLevel();
+
+        if (nextLevel > maxLevel)
+        {
+            Debug.Log("No more levels available.");
+            return;
+        }
+
+        if (mapController != null && mapController.InitMap(nextLevel))
+        {
+            currentLevel = nextLevel;
+            SaveCurrentProgress();
+            UpdateTimeDisplay();
+            isGameRunning = true;
+        }
+    }
+
     public int GetCurrentLevel()
     {
         return currentLevel;    
@@ -115,6 +142,30 @@ public class GamePlayManager : MonoBehaviour
 
     public void SetCurrentLevel(int level)
     {
-        currentLevel = level;
+        currentLevel = Mathf.Max(1, Mathf.Min(level, GetMaxAvailableLevel()));
+    }
+
+    private void LoadSavedProgress()
+    {
+        PlayerProgressData progress = SaveManager.LoadProgress();
+        currentLevel = Mathf.Max(1, Mathf.Min(progress.currentLevel, GetMaxAvailableLevel()));
+    }
+
+    private void SaveCurrentProgress()
+    {
+        int currentLives = PlayerLivesManager.Instance != null ? PlayerLivesManager.Instance.GetCurrentLives() : 3;
+        SaveManager.SaveProgress(currentLevel, currentLives);
+    }
+
+    private int GetMaxAvailableLevel()
+    {
+        int level = 1;
+
+        while (File.Exists(Path.Combine(Application.streamingAssetsPath, "Levels", $"level{level + 1}.json")))
+        {
+            level++;
+        }
+
+        return level;
     }
 }

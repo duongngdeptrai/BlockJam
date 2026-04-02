@@ -18,6 +18,6 @@ public class WinPopup : MonoBehaviour
 
     private void OnNextLevelButtonClicked()
     {
-        
+        GamePlayManager.Instance.AdvanceToNextLevel();
     }
 }
