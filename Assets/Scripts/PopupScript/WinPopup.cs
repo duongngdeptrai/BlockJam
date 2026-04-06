@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,7 +14,7 @@ public class WinPopup : MonoBehaviour
 
     private void OnRetryButtonClicked()
     {
-        GamePlayManager.Instance.OnResetButtonClicked();
+        GamePlayManager.Instance.ResetLevel();
     }
 
     private void OnNextLevelButtonClicked()

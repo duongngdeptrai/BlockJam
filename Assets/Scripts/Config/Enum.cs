@@ -18,3 +18,11 @@ public enum Direction
     Left,
     Right
 }
+
+public enum GameState
+{
+    Home,
+    Playing,
+    Win,
+    Lose
+}

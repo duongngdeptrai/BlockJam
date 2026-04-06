@@ -164,9 +164,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7845419aab51df48a3626caa553b87e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  resetButton: {fileID: 202774513}
   mapController: {fileID: 1159067888}
-  timeText: {fileID: 2110693962}
+  gamePlayUI: {fileID: 170975588}
+  homePanel: {fileID: 506385686}
+  winPanel: {fileID: 897154560}
+  losePanel: {fileID: 1300501237}
+  gameplayPanel: {fileID: 1196016238}
 --- !u!1 &170975583
 GameObject:
   m_ObjectHideFlags: 0
@@ -179,6 +182,7 @@ GameObject:
   - component: {fileID: 170975587}
   - component: {fileID: 170975586}
   - component: {fileID: 170975585}
+  - component: {fileID: 170975588}
   m_Layer: 0
   m_Name: UI_Ingame
   m_TagString: Untagged
@@ -270,6 +274,20 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &170975588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 170975583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15fd2a35dd70c2b4faf00dbe0b34a22b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resetButton: {fileID: 202774513}
+  timeText: {fileID: 2110693962}
 --- !u!1 &184662141
 GameObject:
   m_ObjectHideFlags: 0
@@ -1349,6 +1367,7 @@ GameObject:
   - component: {fileID: 897154561}
   - component: {fileID: 897154563}
   - component: {fileID: 897154562}
+  - component: {fileID: 897154564}
   m_Layer: 5
   m_Name: WinPopup
   m_TagString: Untagged
@@ -1416,6 +1435,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 897154560}
   m_CullTransparentMesh: 1
+--- !u!114 &897154564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 897154560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2c73b0d822c29e46b37bd91c7d8f17f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  retryButton: {fileID: 522195942}
+  nextLevelButton: {fileID: 1612468395}
 --- !u!1 &916900071
 GameObject:
   m_ObjectHideFlags: 0

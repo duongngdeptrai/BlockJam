@@ -504,6 +504,6 @@ public class BlockMove : MonoBehaviour
 
     private void NotifyBlockConsumed()
     {
-            BlockConsumed?.Invoke(block);
+        BlockConsumed?.Invoke(block);
     }
 }

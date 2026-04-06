@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -6,6 +7,8 @@ using UnityEngine;
 
 public partial class MapController : MonoBehaviour
 {
+    public event Action LevelCompleted;
+
     [SerializeField] private int rows = 7, columns = 14;
     [SerializeField] private List<DoorPrefabEntry> doorPrefabs;
     [SerializeField] private Wall wallPrefab;
@@ -16,18 +19,16 @@ public partial class MapController : MonoBehaviour
     [SerializeField] private Transform doorContainer;
     [SerializeField] private Transform wallContainer;
     [SerializeField] private Transform gridContainer;
-    private Dictionary<string, Door> doorPrefabDict;
-    private Dictionary<string, Block> blockPrefabDict;
+    private Dictionary<string, Door> doorPrefabDict = new Dictionary<string, Door>();
+    private Dictionary<string, Block> blockPrefabDict = new Dictionary<string, Block>();
     private LevelData currentLevelData;
-    private List<Door> listDoor;
-    private List<Wall> listWall;
-    private List<Block> listBlock;
+    private List<Door> listDoor = new List<Door>();
+    private List<Wall> listWall = new List<Wall>();
+    private List<Block> listBlock = new List<Block>();
     private int currentLevelIndex = 1;
 
     private void Awake()
     {
-        // Initialize door prefab dictionary
-        doorPrefabDict = new Dictionary<string, Door>();
         if (doorPrefabs != null)
         {
             foreach (var entry in doorPrefabs)
@@ -40,17 +41,10 @@ public partial class MapController : MonoBehaviour
             Debug.LogWarning("Door prefabs list is empty or not assigned!");
         }
         
-        // Initialize block prefab dictionary
-        blockPrefabDict = new Dictionary<string, Block>();
         foreach(var entry in blockPrefabs)
         {
             blockPrefabDict[entry.key] = entry.prefab;
         }
-
-        // Initialize lists
-        listDoor = new List<Door>();
-        listWall = new List<Wall>();
-        listBlock = new List<Block>();
     }
 
     private void OnEnable()
@@ -63,12 +57,7 @@ public partial class MapController : MonoBehaviour
         BlockMove.BlockConsumed -= OnBlockConsumed;
     }
 
-    public bool InitMap()
-    {
-        return InitMap(currentLevelIndex);
-    }
-
-    public bool InitMap(int levelIndex)
+    public void InitMap(int levelIndex)
     {
         currentLevelIndex = Mathf.Max(1, levelIndex);
         levelJsonFileName = $"Levels/level{currentLevelIndex}.json";
@@ -79,7 +68,7 @@ public partial class MapController : MonoBehaviour
         if (currentLevelData == null)
         {
             Debug.LogError($"Failed to load level data from {levelJsonFileName}");
-            return false;
+            return;
         }
 
         rows = currentLevelData.rows;
@@ -90,7 +79,7 @@ public partial class MapController : MonoBehaviour
         GenGrid();
         GenBlocks();
 
-        return true;
+        return;
     }
 
     public void Clear()
@@ -100,11 +89,13 @@ public partial class MapController : MonoBehaviour
         ClearContainer(gridContainer);
         ClearContainer(blockContainer);
         
-        // Clear lists
-        listDoor.Clear();
-        listWall.Clear();
-        listBlock.Clear();
-        
+        if (listDoor != null)
+            listDoor.Clear();
+        if (listWall != null)
+            listWall.Clear();
+        if (listBlock != null)
+            listBlock.Clear();
+
         currentLevelData = null;
     }
 
@@ -119,9 +110,9 @@ public partial class MapController : MonoBehaviour
         }
     }
 
-    public bool Reset()
+    public void ReloadCurrentLevel()
     {
-        return InitMap(currentLevelIndex);
+        InitMap(currentLevelIndex);
     }
 
     public LevelData GetCurrentLevelData()
@@ -141,7 +132,8 @@ public partial class MapController : MonoBehaviour
         if (listBlock.Count == 0)
         {
             Debug.Log("All blocks consumed! Level complete!");
-            // You can trigger level completion logic here, such as loading the next level or showing a victory screen.
+            StateManager.ToWin();
+            LevelCompleted?.Invoke();
         }
     }
     

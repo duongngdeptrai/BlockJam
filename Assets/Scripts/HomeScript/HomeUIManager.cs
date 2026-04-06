@@ -23,7 +23,9 @@ public class HomeUIManager : MonoBehaviour
 
     private void OnPlayButtonClicked()
     {
-        GamePlayManager.Instance.InitMap();
-        gameObject.SetActive(false);
+        if (GamePlayManager.Instance != null)
+        {
+            GamePlayManager.Instance.StartPlaying();
+        }
     }
 }
