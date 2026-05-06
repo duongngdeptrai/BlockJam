@@ -76,8 +76,9 @@ public class LevelLoader : MonoBehaviour
     
     private static bool IsValidDoorSpawnData(DoorSpawnData door, int rows, int columns)
     {
-        if (door.row < 0 || door.row >= rows) return false;
-        if (door.column < 0 || door.column >= columns) return false;
+        // Allow doors to be placed on the immediate border cells: -1 (before 0) and rows/columns (after last)
+        if (door.row < -1 || door.row > rows) return false;
+        if (door.column < -1 || door.column > columns) return false;
         if (string.IsNullOrEmpty(door.direction)) return false;
         if (!IsValidDirection(door.direction)) return false;
         if (string.IsNullOrEmpty(door.doorType)) return false;
