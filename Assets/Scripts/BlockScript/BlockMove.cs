@@ -4,7 +4,6 @@ using System.Collections.Generic;
 public class BlockMove : MonoBehaviour
 {
     public static event Action<Block> BlockConsumed;
-    [SerializeField] private Collider2D boxCollider; // Hỗ trợ cả BoxCollider2D (block cũ) lẫn CompositeCollider2D (block hình L/T/Z)
     [SerializeField] private Block block;
     private bool isDragging = false;
     private Vector3 offset;
@@ -28,18 +27,140 @@ public class BlockMove : MonoBehaviour
     public bool closeDoor = false;
     private Door currentDoor;
     private Collider2D doorCollider;
-    private Collider2D blockCollider;
     private float doorEnterDepth = 0.1f;
     [SerializeField] private List<Transform> raycastOrigins = new List<Transform>();
     [SerializeField] private float raycastDistance = 20f;
+
+    [Header("Drag Blocking")]
+    [SerializeField] private LayerMask dragObstacleMask = ~0;
+    [SerializeField] private float dragSkinWidth = 0.02f;
+
+    [SerializeField] private List<BoxCollider2D> dragCastBoxColliders = new List<BoxCollider2D>();
+
+    private readonly List<RaycastHit2D> dragCastHits = new List<RaycastHit2D>(16);
+    private ContactFilter2D dragContactFilter;
     //bound của door và vật
     private Bounds doorBounds;
     private Bounds blockBounds;
+
+    private Door pendingConsumeDoor;
+    private Collider2D pendingConsumeDoorCollider;
+    private float pendingConsumeDoorDistance;
+
+    private RigidbodyInterpolation2D originalInterpolation;
+    private CollisionDetectionMode2D originalCollisionDetection;
+    private float originalGravityScale;
 
     private void Start()
     {
         cam = Camera.main;
         rb = GetComponent<Rigidbody2D>();
+
+        originalInterpolation = rb.interpolation;
+        originalCollisionDetection = rb.collisionDetectionMode;
+        originalGravityScale = rb.gravityScale;
+
+        dragContactFilter = new ContactFilter2D
+        {
+            useLayerMask = true,
+            layerMask = dragObstacleMask,
+            useTriggers = true
+        };
+
+        if (dragCastBoxColliders == null)
+        {
+            dragCastBoxColliders = new List<BoxCollider2D>();
+        }
+
+        pendingConsumeDoor = null;
+        pendingConsumeDoorCollider = null;
+        pendingConsumeDoorDistance = float.PositiveInfinity;
+    }
+
+    private void SnapToGridAndConsumeDoor(Door door, Collider2D doorCol)
+    {
+        if (door == null || doorCol == null) return;
+
+        // Stop dragging immediately.
+        isDragging = false;
+        hasTarget = false;
+
+        rb.bodyType = RigidbodyType2D.Static;
+        rb.interpolation = originalInterpolation;
+        rb.collisionDetectionMode = originalCollisionDetection;
+        rb.gravityScale = originalGravityScale;
+
+        // Snap to grid first.
+        Vector3 position = transform.position;
+        position.x = Mathf.Round(position.x - 0.5f) + 0.5f;
+        position.y = Mathf.Round(position.y);
+        rb.position = position;
+        transform.position = position;
+        Physics2D.SyncTransforms();
+
+        // Then try to consume.
+        doorCollider = doorCol;
+        doorCollider.isTrigger = true;
+        currentDoor = door;
+        closeDoor = true;
+
+        CheckDoorEnterDepth();
+
+        // If not consumed (doorCollider still set), restore trigger.
+        if (doorCollider != null)
+        {
+            doorCollider.isTrigger = false;
+        }
+    }
+
+    private void EnsureDragCastColliders()
+    {
+        if (dragCastBoxColliders == null)
+        {
+            dragCastBoxColliders = new List<BoxCollider2D>();
+        }
+
+        // If user didn't assign the list in Inspector, fall back to collecting children.
+        if (dragCastBoxColliders.Count == 0)
+        {
+            GetComponentsInChildren(dragCastBoxColliders);
+        }
+
+        dragCastBoxColliders.RemoveAll(c => c == null);
+    }
+
+    private bool TryGetBlockBounds(out Bounds bounds, bool includeDisabled)
+    {
+        EnsureDragCastColliders();
+
+        bool hasBounds = false;
+        bounds = default;
+
+        for (int i = 0; i < dragCastBoxColliders.Count; i++)
+        {
+            BoxCollider2D col = dragCastBoxColliders[i];
+            if (col == null)
+            {
+                continue;
+            }
+
+            if (!includeDisabled && !col.enabled)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = col.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(col.bounds);
+            }
+        }
+
+        return hasBounds;
     }
 
     private void OnMouseDown()
@@ -47,8 +168,11 @@ public class BlockMove : MonoBehaviour
         if (IsAutoExiting) return;
 
         isDragging = true;
-        rb.bodyType = RigidbodyType2D.Dynamic ; 
+        // Drag is fully code-driven => kinematic body + direct position set for "dính tay".
+        rb.bodyType = RigidbodyType2D.Kinematic;
         rb.gravityScale = 0;
+        rb.interpolation = RigidbodyInterpolation2D.None;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Discrete;
         
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
@@ -71,21 +195,173 @@ public class BlockMove : MonoBehaviour
         targetPos = mousePos + offset;
     }
 
-    private void FixedUpdate()
+    private Vector2 ResolveDragStep(Vector2 fromPos, Vector2 desiredPos, out bool wasClamped)
     {
-        if (IsAutoExiting || !hasTarget) return;
-        
-        if (isDragging)
+        EnsureDragCastColliders();
+
+        pendingConsumeDoor = null;
+        pendingConsumeDoorCollider = null;
+        pendingConsumeDoorDistance = float.PositiveInfinity;
+
+        Vector2 delta = desiredPos - fromPos;
+        const float eps = 0.0001f;
+        if (delta.sqrMagnitude <= eps * eps)
         {
-            // Dùng nội suy (Lerp) để Block trượt kéo theo TargetPos một cách đàn hồi siêu mượt
-            Vector2 smoothedPos = Vector2.Lerp(rb.position, targetPos, Time.fixedDeltaTime * 15f);
-            rb.MovePosition(smoothedPos);
+            wasClamped = false;
+            return desiredPos;
         }
 
-        if (closeDoor)
+        // First, try the full diagonal step.
+        bool fullClamped;
+        Vector2 fullResolved = ResolveDragDelta(fromPos, delta, out fullClamped);
+        if (!fullClamped)
         {
-            CheckDoorEnterDepth();
+            wasClamped = false;
+            return fullResolved;
         }
+
+        // If diagonal is blocked, allow sliding on the unblocked axis.
+        Vector2 stepPos = fromPos;
+        bool xClamped = false;
+        bool yClamped = false;
+
+        if (Mathf.Abs(delta.x) > eps)
+        {
+            stepPos = ResolveDragDelta(stepPos, new Vector2(delta.x, 0f), out xClamped);
+        }
+
+        if (Mathf.Abs(delta.y) > eps)
+        {
+            stepPos = ResolveDragDelta(stepPos, new Vector2(0f, delta.y), out yClamped);
+        }
+
+        wasClamped = (stepPos - desiredPos).sqrMagnitude > eps * eps;
+        return stepPos;
+    }
+
+    private Vector2 ResolveDragDelta(Vector2 fromPos, Vector2 delta, out bool wasClamped)
+    {
+        wasClamped = false;
+
+        const float eps = 0.0001f;
+        float distance = delta.magnitude;
+        if (distance <= eps)
+        {
+            return fromPos;
+        }
+
+        Vector2 dir = delta / distance;
+        float castDistance = distance + Mathf.Max(0f, dragSkinWidth);
+
+        Door blockingDoor;
+        Collider2D blockingDoorCollider;
+        bool blockingDoorConsumable;
+        float nearestBlockingDistance = GetNearestBlockingDistance(dir, castDistance, out blockingDoor, out blockingDoorCollider, out blockingDoorConsumable);
+
+        if (blockingDoorConsumable && blockingDoor != null && blockingDoorCollider != null)
+        {
+            if (nearestBlockingDistance < pendingConsumeDoorDistance)
+            {
+                pendingConsumeDoor = blockingDoor;
+                pendingConsumeDoorCollider = blockingDoorCollider;
+                pendingConsumeDoorDistance = nearestBlockingDistance;
+            }
+        }
+        if (float.IsPositiveInfinity(nearestBlockingDistance))
+        {
+            return fromPos + delta;
+        }
+
+        float allowedDistance = Mathf.Max(0f, nearestBlockingDistance - Mathf.Max(0f, dragSkinWidth));
+        float finalDistance = Mathf.Min(distance, allowedDistance);
+        wasClamped = finalDistance < (distance - eps);
+        return fromPos + dir * finalDistance;
+    }
+
+    private float GetNearestBlockingDistance(Vector2 dir, float castDistance, out Door blockingDoor, out Collider2D blockingDoorCollider, out bool blockingDoorConsumable)
+    {
+        blockingDoor = null;
+        blockingDoorCollider = null;
+        blockingDoorConsumable = false;
+
+        float nearestBlockingDistance = float.PositiveInfinity;
+
+        if (dragCastBoxColliders == null || dragCastBoxColliders.Count == 0)
+        {
+            return nearestBlockingDistance;
+        }
+
+        for (int colliderIndex = 0; colliderIndex < dragCastBoxColliders.Count; colliderIndex++)
+        {
+            BoxCollider2D castCollider = dragCastBoxColliders[colliderIndex];
+            if (castCollider == null || !castCollider.enabled || castCollider.isTrigger)
+            {
+                continue;
+            }
+
+            dragCastHits.Clear();
+            int hitCount = castCollider.Cast(dir, dragContactFilter, dragCastHits, castDistance);
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit2D hit = dragCastHits[i];
+                Collider2D hitCollider = hit.collider;
+                if (hitCollider == null)
+                {
+                    continue;
+                }
+
+                // Ignore colliders that belong to this block.
+                if (hitCollider.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                Door hitDoor = hitCollider.GetComponent<Door>();
+                if (hitDoor != null)
+                {
+                    // Doors always block while dragging; consuming is handled after release/snap.
+                    if (hit.distance < nearestBlockingDistance)
+                    {
+                        nearestBlockingDistance = hit.distance;
+
+                        blockingDoor = hitDoor;
+                        blockingDoorCollider = hitCollider;
+                        blockingDoorConsumable = CheckFitDoorSize(hitDoor);
+                    }
+
+                    continue;
+                }
+
+                Block hitBlock = hitCollider.GetComponentInParent<Block>();
+                if (hitBlock != null)
+                {
+                    if (hitBlock == block)
+                    {
+                        continue;
+                    }
+
+                    if (hit.distance < nearestBlockingDistance)
+                    {
+                        nearestBlockingDistance = hit.distance;
+                    }
+
+                    continue;
+                }
+
+                Wall hitWall = hitCollider.GetComponent<Wall>();
+                if (hitWall != null)
+                {
+                    if (hit.distance < nearestBlockingDistance)
+                    {
+                        nearestBlockingDistance = hit.distance;
+                    }
+
+                    continue;
+                }
+            }
+        }
+
+        return nearestBlockingDistance;
     }
     public void OnCollisionEnter(Collision collision)
     {
@@ -98,6 +374,9 @@ public class BlockMove : MonoBehaviour
 
         isDragging = false;
         rb.bodyType = RigidbodyType2D.Static;
+        rb.interpolation = originalInterpolation;
+        rb.collisionDetectionMode = originalCollisionDetection;
+        rb.gravityScale = originalGravityScale;
         hasTarget = false;
         SnapToGrid();
     }
@@ -131,7 +410,9 @@ public class BlockMove : MonoBehaviour
                 doorCollider.isTrigger = true;
                 currentDoor = door;
                 closeDoor = true;         // Chỉ ghi nhận, KHÔNG auto-exit khi đang kéo
-                blockCollider = boxCollider;
+
+                // Ăn luôn nếu chạm đúng cửa hợp lệ và không bị chặn đường ra.
+                TryReleaseCurrentDoor(GetDirectionVector(currentDoor.Direction));
             }
         }
     }
@@ -174,8 +455,14 @@ public class BlockMove : MonoBehaviour
 
         Physics2D.SyncTransforms(); // Cập nhật hitbox BoxCollider2D ngay tức khắc
 
+        if (!TryGetBlockBounds(out Bounds snapBounds, includeDisabled: false))
+        {
+            if (doorCollider != null) doorCollider.isTrigger = false;
+            return;
+        }
+
         // Quét quanh vị trí mới Snap xem có rà trúng cửa không (Giống hệt OnCollisionEnter2D)
-        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(boxCollider.bounds.center, boxCollider.bounds.size + new Vector3(0.1f, 0.1f, 0f), 0f);
+        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(snapBounds.center, snapBounds.size + new Vector3(0.1f, 0.1f, 0f), 0f);
         
         foreach (var col in hitColliders)
         {
@@ -188,7 +475,6 @@ public class BlockMove : MonoBehaviour
                     doorCollider.isTrigger = true;
                     currentDoor = door;
                     closeDoor = true;
-                    blockCollider = boxCollider;
 
                     CheckDoorEnterDepth(); // Kiểm tra độ lún/thẳng hàng và AutoExit ngay!
                     break; 
@@ -225,13 +511,19 @@ public class BlockMove : MonoBehaviour
 
     public void CheckDoorEnterDepth()
     {
-        if (currentDoor == null || doorCollider == null || blockCollider == null)
+        if (currentDoor == null || doorCollider == null)
         {
             closeDoor = false;
             return;
         }
 
-        blockBounds = blockCollider.bounds;
+        if (!TryGetBlockBounds(out Bounds checkBounds, includeDisabled: false))
+        {
+            closeDoor = false;
+            return;
+        }
+
+        blockBounds = checkBounds;
         doorBounds = doorCollider.bounds;
 
         bool isAligned = CheckBlockAlignedWithDoor(blockBounds, doorBounds, currentDoor.Direction);
@@ -274,15 +566,56 @@ public class BlockMove : MonoBehaviour
         
         // Tắt vật lý, va chạm
         rb.bodyType = RigidbodyType2D.Static;
-        if (boxCollider != null) boxCollider.enabled = false;
+        rb.interpolation = originalInterpolation;
+        rb.collisionDetectionMode = originalCollisionDetection;
+        rb.gravityScale = originalGravityScale;
+        EnsureDragCastColliders();
+        for (int i = 0; i < dragCastBoxColliders.Count; i++)
+        {
+            if (dragCastBoxColliders[i] != null)
+            {
+                dragCastBoxColliders[i].enabled = false;
+            }
+        }
     }
 
     private void Update()
     {
-        // VẼ DEBUG BOUNDS LIÊN TỤC ĐỂ BẠN QUAN SÁT TRONG SCENE VIEW
-        if (boxCollider != null)
+        if (!IsAutoExiting && hasTarget && isDragging)
         {
-            DrawBounds(boxCollider.bounds, Color.yellow);
+            // Frame-rate independent smoothing: t = 1 - e^{-k*dt}
+            float t = 1f - Mathf.Exp(-15f * Time.deltaTime);
+            Vector2 desiredPos = Vector2.Lerp(rb.position, targetPos, t);
+
+            bool wasClamped;
+            Vector2 resolvedPos = ResolveDragStep(rb.position, desiredPos, out wasClamped);
+
+            // If we are blocked by a consumable door, snap and consume immediately.
+            if (pendingConsumeDoor != null && pendingConsumeDoorCollider != null)
+            {
+                SnapToGridAndConsumeDoor(pendingConsumeDoor, pendingConsumeDoorCollider);
+                return;
+            }
+
+            // Immediate movement (no physics-step latency).
+            rb.position = resolvedPos;
+            Vector3 pos = transform.position;
+            pos.x = resolvedPos.x;
+            pos.y = resolvedPos.y;
+            transform.position = pos;
+            Physics2D.SyncTransforms();
+
+            if (wasClamped)
+            {
+                targetPos.x = resolvedPos.x;
+                targetPos.y = resolvedPos.y;
+            }
+        }
+
+        // VẼ DEBUG BOUNDS LIÊN TỤC ĐỂ BẠN QUAN SÁT TRONG SCENE VIEW
+        if (TryGetBlockBounds(out Bounds debugBounds, includeDisabled: true))
+        {
+            DrawBounds(debugBounds, Color.yellow);
         }
 
         if (doorCollider != null)
@@ -308,7 +641,6 @@ public class BlockMove : MonoBehaviour
                     if(CloseDoor()){
                         TryReleaseCurrentDoor(GetDirectionVector(currentDoor.Direction));
                     }
-                    blockCollider = boxCollider;
                 }
             }
         }
@@ -336,7 +668,12 @@ public class BlockMove : MonoBehaviour
     }
     bool CloseDoor(){
         if (currentDoor == null || doorCollider == null) return false;
-        blockBounds = boxCollider.bounds;
+        if (!TryGetBlockBounds(out Bounds closeBounds, includeDisabled: false))
+        {
+            return false;
+        }
+
+        blockBounds = closeBounds;
         doorBounds = doorCollider.bounds;
         DrawBounds(blockBounds, Color.yellow);
         DrawBounds(doorBounds, Color.green);
@@ -363,7 +700,12 @@ public class BlockMove : MonoBehaviour
         return false ; 
     }   
     bool CheckDestroy(){
-        blockBounds = boxCollider.bounds; // Cập nhật bounds thực tế theo vị trí hiện tại
+        if (!TryGetBlockBounds(out Bounds destroyBounds, includeDisabled: true))
+        {
+            return false;
+        }
+
+        blockBounds = destroyBounds; // Cập nhật bounds thực tế theo vị trí hiện tại
         switch(autoExitDirectionEnum){
             case Direction.Up:
                 if (blockBounds.max.y >= exitThreshold) return true;
@@ -489,7 +831,10 @@ public class BlockMove : MonoBehaviour
     {
         if (currentDoor == null) return;
 
-        blockBounds = boxCollider.bounds; // Cập nhật bounds thực tế
+        if (TryGetBlockBounds(out Bounds exitBounds, includeDisabled: true))
+        {
+            blockBounds = exitBounds; // Cập nhật bounds thực tế
+        }
         currentDoor.PlayParticles(blockBounds);
         
         closeDoor = false; // Ngừng CheckDoorEnterDepth
