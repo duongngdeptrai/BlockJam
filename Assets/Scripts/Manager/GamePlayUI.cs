@@ -5,6 +5,7 @@ using TMPro;
 public class GamePlayUI : MonoBehaviour
 {
     [SerializeField] private Button resetButton;
+    [SerializeField] private Button homeButton;
     [SerializeField] private TextMeshProUGUI timeText;
     private float timeRemaining;
 
@@ -13,6 +14,10 @@ public class GamePlayUI : MonoBehaviour
         if (resetButton != null)
         {
             resetButton.onClick.AddListener(OnResetButtonClicked);
+        }
+        if (homeButton != null)
+        {
+            homeButton.onClick.AddListener(OnHomeButtonClicked);
         }
     }
 
@@ -41,6 +46,10 @@ public class GamePlayUI : MonoBehaviour
         {
             resetButton.onClick.RemoveListener(OnResetButtonClicked);
         }
+        if (homeButton != null)
+        {
+            homeButton.onClick.RemoveListener(OnHomeButtonClicked);
+        }
     }
 
     public void StartTimer(float timeLimit)
@@ -63,5 +72,9 @@ public class GamePlayUI : MonoBehaviour
         {
             GamePlayManager.Instance.ResetLevel();
         }
+    }
+    private void OnHomeButtonClicked()
+    {
+        StateManager.ToHome();
     }
 }

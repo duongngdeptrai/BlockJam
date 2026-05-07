@@ -363,6 +363,7 @@ public class BlockMove : MonoBehaviour
 
         return nearestBlockingDistance;
     }
+
     public void OnCollisionEnter(Collision collision)
     {
         //Debug.Log($"[BlockMove] Collision with {collision.collider.name} at {collision.GetContact(0).point}");
