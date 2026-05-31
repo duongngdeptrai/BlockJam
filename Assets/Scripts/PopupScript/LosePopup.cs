@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,35 +10,35 @@ public class LosePopup : MonoBehaviour
     {
         if (retryButton != null)
         {
-            retryButton.onClick.AddListener(OnRetryButtonClicked);
+            //retryButton.onClick.AddListener(OnRetryButtonClicked);
+        }
+        else
+        {
+            Debug.LogError("LosePopup: retryButton is not assigned in Inspector.", this);
         }
 
         if (homeButton != null)
         {
-            homeButton.onClick.AddListener(OnHomeButtonClicked);
+           // homeButton.onClick.AddListener(OnHomeButtonClicked);
+        }
+        else
+        {
+            Debug.LogError("LosePopup: homeButton is not assigned in Inspector.", this);
         }
     }
 
-    private void OnDestroy()
+    public void OnRetryButtonClicked()
     {
-        if (retryButton != null)
+        if (GamePlayManager.Instance == null)
         {
-            retryButton.onClick.RemoveListener(OnRetryButtonClicked);
+            Debug.LogError("LosePopup: GamePlayManager.Instance is null! Cannot retry level.", this);
+            return;
         }
-
-        if (homeButton != null)
-        {
-            homeButton.onClick.RemoveListener(OnHomeButtonClicked);
-        }
-    }
-
-    private void OnRetryButtonClicked()
-    {
         GamePlayManager.Instance.ResetLevel();
     }
 
-    private void OnHomeButtonClicked()
+    public void OnHomeButtonClicked()
     {
-        StateManager.ToHome();
+        GameStateMachine.ToHome();
     }
 }

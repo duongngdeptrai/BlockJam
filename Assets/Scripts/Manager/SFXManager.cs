@@ -1,17 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class SFXData
+public class SFXManager : Singleton<SFXManager>
 {
-    public string name;
-    public AudioClip clip;
-}
-
-public class SFXManager : MonoBehaviour
-{
-    public static SFXManager Instance;
-
     [Header("SFX List")]
     public List<SFXData> sfxList;
 
@@ -21,19 +12,16 @@ public class SFXManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton
-        if (Instance == null)
+        base.Awake();
+        if (Instance != this) return;
+
+        DontDestroyOnLoad(gameObject);
+
+        if (sfxList == null)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
+            Debug.LogError("SFXManager: sfxList is null! Assign SFX entries in Inspector.", this);
         }
 
-        // Tạo AudioSources
         oneShotSource = gameObject.AddComponent<AudioSource>();
         oneShotSource.playOnAwake = false;
         oneShotSource.loop = false;
@@ -42,63 +30,64 @@ public class SFXManager : MonoBehaviour
         loopSource.playOnAwake = false;
         loopSource.loop = false;
 
-        // Tạo dictionary
         sfxDictionary = new Dictionary<string, AudioClip>();
-
-        foreach (var sfx in sfxList)
+        if (sfxList != null)
         {
-            if (!sfxDictionary.ContainsKey(sfx.name))
+            foreach (var sfx in sfxList)
             {
-                sfxDictionary.Add(sfx.name, sfx.clip);
+                if (sfx == null)
+                {
+                    Debug.LogWarning("SFXManager: Skipping null SFXData entry in sfxList.", this);
+                    continue;
+                }
+                if (!sfxDictionary.ContainsKey(sfx.name))
+                {
+                    sfxDictionary.Add(sfx.name, sfx.clip);
+                }
             }
         }
 
-        HandleStateChanged(StateManager.CurrentState);
+        HandleStateChanged(GameStateMachine.CurrentState);
     }
 
     private void OnEnable()
     {
-        StateManager.StateChanged += HandleStateChanged;
+        GameStateMachine.StateChanged += HandleStateChanged;
     }
 
     private void OnDisable()
     {
-        StateManager.StateChanged -= HandleStateChanged;
+        GameStateMachine.StateChanged -= HandleStateChanged;
     }
 
-    /// <summary>
-    /// Play SFX based on sound name and loop setting
-    /// </summary>
     public void Play(string soundName, bool isLoop = false, float volume = 1f)
     {
         if (!TryPlay(soundName, isLoop, volume))
         {
-            Debug.LogWarning("Không tìm thấy SFX: " + soundName);
+            Debug.LogWarning($"SFXManager: SFX not found: '{soundName}'. Add it to sfxList in Inspector.", this);
         }
     }
 
-    /// <summary>
-    /// Play One Shot (Deprecated: Use Play instead)
-    /// </summary>
     public void PlayOneShot(string soundName, float volume = 1f)
     {
         Play(soundName, false, volume);
     }
 
-    /// <summary>
-    /// Play Loop (Deprecated: Use Play instead)
-    /// </summary>
     public void PlayLoop(string soundName, float volume = 1f)
     {
         Play(soundName, true, volume);
     }
 
-    /// <summary>
-    /// Stop Loop
-    /// </summary>
     public void StopLoop()
     {
-        loopSource.Stop();
+        if (loopSource != null)
+        {
+            loopSource.Stop();
+        }
+        else
+        {
+            Debug.LogWarning("SFXManager: loopSource is null! Cannot stop loop.", this);
+        }
     }
 
     private void HandleStateChanged(GameState state)
@@ -106,27 +95,33 @@ public class SFXManager : MonoBehaviour
         switch (state)
         {
             case GameState.Home:
-                Play("music_home", true);
+                Play(AudioKeys.MusicHome, true);
                 break;
             case GameState.Playing:
-                if (!TryPlay("music_playing", true))
+                if (!TryPlay(AudioKeys.MusicPlaying, true))
                 {
-                    Play("music_play", true);
+                    Play(AudioKeys.MusicPlay, true);
                 }
                 break;
             case GameState.Win:
                 StopLoop();
-                Play("win_game", false);
+                Play(AudioKeys.WinGame, false);
                 break;
             case GameState.Lose:
                 StopLoop();
-                Play("lose_game", false);
+                Play(AudioKeys.LoseGame, false);
                 break;
         }
     }
 
     private bool TryPlay(string soundName, bool isLoop = false, float volume = 1f)
     {
+        if (sfxDictionary == null)
+        {
+            Debug.LogError("SFXManager: sfxDictionary is null! Cannot play sound.", this);
+            return false;
+        }
+
         if (!sfxDictionary.TryGetValue(soundName, out AudioClip clip))
         {
             return false;
@@ -134,7 +129,12 @@ public class SFXManager : MonoBehaviour
 
         if (isLoop)
         {
-            // Nếu đang phát đúng clip thì bỏ qua
+            if (loopSource == null)
+            {
+                Debug.LogError("SFXManager: loopSource is null! Cannot play loop.", this);
+                return false;
+            }
+
             if (loopSource.clip == clip && loopSource.isPlaying)
                 return true;
 
@@ -146,7 +146,11 @@ public class SFXManager : MonoBehaviour
         }
         else
         {
-            // Play one shot
+            if (oneShotSource == null)
+            {
+                Debug.LogError("SFXManager: oneShotSource is null! Cannot play one-shot.", this);
+                return false;
+            }
             oneShotSource.PlayOneShot(clip, volume);
         }
 

@@ -66,5 +66,5 @@
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj"
     },
-    "dotnet.defaultSolution": "duongdeptrai.sln"
+    "dotnet.defaultSolution": "PikaGame29.sln"
 }

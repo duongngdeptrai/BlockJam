@@ -1,7 +1,6 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.IO;
 using UnityEngine;
 
 public partial class MapController : MonoBehaviour
@@ -28,21 +27,49 @@ public partial class MapController : MonoBehaviour
 
     private void Awake()
     {
-        if (doorPrefabs != null)
+        Debug.Log($"MapController Awake: doorPrefabs is null={doorPrefabs == null}, count={doorPrefabs?.Count ?? -1}");
+        if (doorPrefabs == null)
         {
-            foreach (var entry in doorPrefabs)
-            {
-                doorPrefabDict[entry.key] = entry.prefab;
-            }
+            Debug.LogError("MapController: doorPrefabs list is NULL in Awake(). Assign prefabs in Inspector.");
+        }
+        else if (doorPrefabs.Count == 0)
+        {
+            Debug.LogError("MapController: doorPrefabs list is EMPTY in Awake(). Add entries in Inspector.");
         }
         else
         {
-            Debug.LogWarning("Door prefabs list is empty or not assigned!");
+            foreach (var entry in doorPrefabs)
+            {
+                if (entry != null && entry.prefab != null && !string.IsNullOrEmpty(entry.key))
+                {
+                    doorPrefabDict[entry.key] = entry.prefab;
+                }
+                else
+                {
+                    Debug.LogWarning($"Skipped invalid entry: key='{entry?.key}', prefab={(entry?.prefab != null)}");
+                }
+            }
+            Debug.Log($"MapController: doorPrefabDict loaded {doorPrefabDict.Count} entries. Keys: [{string.Join(", ", doorPrefabDict.Keys)}]");
         }
-        
-        foreach(var entry in blockPrefabs)
+
+        if (blockPrefabs == null)
         {
-            blockPrefabDict[entry.key] = entry.prefab;
+            Debug.LogError("MapController: blockPrefabs list is NULL in Awake(). Assign prefabs in Inspector.");
+        }
+        else if (blockPrefabs.Count == 0)
+        {
+            Debug.LogError("MapController: blockPrefabs list is EMPTY in Awake(). Add entries in Inspector.");
+        }
+        else
+        {
+            foreach (var entry in blockPrefabs)
+            {
+                if (entry != null && entry.prefab != null && !string.IsNullOrEmpty(entry.key))
+                {
+                    blockPrefabDict[entry.key] = entry.prefab;
+                }
+            }
+            Debug.Log($"MapController: blockPrefabDict loaded {blockPrefabDict.Count} entries. Keys: [{string.Join(", ", blockPrefabDict.Keys)}]");
         }
     }
 
@@ -58,7 +85,7 @@ public partial class MapController : MonoBehaviour
 
     public void InitMap(int levelIndex)
     {
-        currentLevelIndex = Mathf.Max(1, levelIndex);
+        currentLevelIndex = Mathf.Max(GameConstants.MIN_LEVEL, levelIndex);
         levelJsonFileName = $"Levels/level{currentLevelIndex}.json";
 
         Clear();
@@ -77,8 +104,6 @@ public partial class MapController : MonoBehaviour
         GenDoors();
         GenGrid();
         GenBlocks();
-
-        return;
     }
 
     public void Clear()
@@ -87,25 +112,21 @@ public partial class MapController : MonoBehaviour
         ClearContainer(doorContainer);
         ClearContainer(gridContainer);
         ClearContainer(blockContainer);
-        
-        if (listDoor != null)
-            listDoor.Clear();
-        if (listWall != null)
-            listWall.Clear();
-        if (listBlock != null)
-            listBlock.Clear();
+
+        if (listDoor != null) listDoor.Clear();
+        if (listWall != null) listWall.Clear();
+        if (listBlock != null) listBlock.Clear();
 
         currentLevelData = null;
     }
 
     private void ClearContainer(Transform container)
     {
-        if (container == null)
-            return;
+        if (container == null) return;
 
-        while (container.childCount > 0)
+        for (int i = container.childCount - 1; i >= 0; i--)
         {
-            DestroyImmediate(container.GetChild(0).gameObject);
+            Destroy(container.GetChild(i).gameObject);
         }
     }
 
@@ -131,11 +152,10 @@ public partial class MapController : MonoBehaviour
         if (listBlock.Count == 0)
         {
             Debug.Log("All blocks consumed! Level complete!");
-            StateManager.ToWin();
+            GameStateMachine.ToWin();
             LevelCompleted?.Invoke();
         }
     }
-    
 }
 
 [System.Serializable]

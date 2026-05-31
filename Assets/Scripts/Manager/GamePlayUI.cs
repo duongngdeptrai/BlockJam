@@ -15,25 +15,31 @@ public class GamePlayUI : MonoBehaviour
         {
             resetButton.onClick.AddListener(OnResetButtonClicked);
         }
+        else
+        {
+            Debug.LogError("GamePlayUI: resetButton is not assigned in Inspector.");
+        }
+
         if (homeButton != null)
         {
             homeButton.onClick.AddListener(OnHomeButtonClicked);
+        }
+        else
+        {
+            Debug.LogError("GamePlayUI: homeButton is not assigned in Inspector.");
         }
     }
 
     private void Update()
     {
-        if ( StateManager.CurrentState != GameState.Playing)
-        {
-            return;
-        }
+        if (!GameStateMachine.Is(GameState.Playing)) return;
 
         timeRemaining -= Time.deltaTime;
         if (timeRemaining <= 0f)
         {
             timeRemaining = 0f;
             UpdateTimeDisplay();
-            StateManager.ToLose();
+            GameStateMachine.ToLose();
             return;
         }
 
@@ -60,21 +66,26 @@ public class GamePlayUI : MonoBehaviour
 
     private void UpdateTimeDisplay()
     {
-        if (timeText != null)
+        if (timeText == null)
         {
-            timeText.text = $"Time: {timeRemaining:F0}s";
+            Debug.LogError("GamePlayUI: timeText is null! Assign TextMeshProUGUI in Inspector.");
+            return;
         }
+        timeText.text = $"Time: {timeRemaining:F0}s";
     }
 
     private void OnResetButtonClicked()
     {
-        if (GamePlayManager.Instance != null)
+        if (GamePlayManager.Instance == null)
         {
-            GamePlayManager.Instance.ResetLevel();
+            Debug.LogError("GamePlayUI: GamePlayManager.Instance is null! Cannot reset level.");
+            return;
         }
+        GamePlayManager.Instance.ResetLevel();
     }
+
     private void OnHomeButtonClicked()
     {
-        StateManager.ToHome();
+        GameStateMachine.ToHome();
     }
 }

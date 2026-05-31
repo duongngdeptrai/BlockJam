@@ -1,16 +1,10 @@
 using UnityEngine;
-public class PlayerLivesManager : MonoBehaviour
+
+public class PlayerLivesManager : Singleton<PlayerLivesManager>
 {
-    public static PlayerLivesManager Instance { get; private set; }
-    
-    private int currentLives = 5;
-      
-    private void Awake()
-    {
-        if (Instance != null) Destroy(gameObject);
-        Instance = this;
-    }
-    
+    private const int MAX_LIVES = GameConstants.MAX_LIVES;
+    private int currentLives = MAX_LIVES;
+
     public int GetCurrentLives()
     {
         return currentLives;
@@ -19,8 +13,6 @@ public class PlayerLivesManager : MonoBehaviour
     public void AddCurrentLives(int amount)
     {
         currentLives += amount;
-        currentLives = Mathf.Max(currentLives, 0);
-        currentLives = Mathf.Min(currentLives, 5);
+        currentLives = Mathf.Clamp(currentLives, 0, MAX_LIVES);
     }
-
 }

@@ -1,105 +1,55 @@
 using System.IO;
 using UnityEngine;
 
-public class GamePlayManager : MonoBehaviour
+public class GamePlayManager : Singleton<GamePlayManager>
 {
-    public static GamePlayManager Instance { get; private set; }
-
     [SerializeField] private MapController mapController;
     [SerializeField] private GamePlayUI gamePlayUI;
-    [Header("State UI")]
-    [SerializeField] private GameObject homePanel;
-    [SerializeField] private GameObject winPanel;
-    [SerializeField] private GameObject losePanel;
-    [SerializeField] private GameObject gameplayPanel;
 
     private int currentLevel = 1;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-
+        base.Awake();
+        if (Instance != null && Instance != this) return;
         LoadSavedProgress();
-        StateManager.ConfigurePanels(homePanel, winPanel, losePanel, gameplayPanel);
     }
+
     private void OnEnable()
     {
-        StateManager.ToHome();
+        GameStateMachine.ToHome();
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            StateManager.ClearPanels();
-        }
 
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-    }
     public void ResetLevel()
     {
-        if (mapController == null)
-        {
-            return;
-        }
-
-        mapController.ReloadCurrentLevel();
-        StartLevelTimer();
-        StateManager.ToPlaying();
+        StartPlaying();
     }
 
     public void StartPlaying()
     {
-        if (mapController == null)
-        {
-            return;
-        }
-
+        if (mapController == null) return;
+        GameStateMachine.ToPlaying();
         mapController.InitMap(currentLevel);
         StartLevelTimer();
-        StateManager.ToPlaying();
     }
 
     public void AdvanceToNextLevel()
     {
         int nextLevel = currentLevel + 1;
         int maxLevel = GetMaxAvailableLevel();
-
-        if (nextLevel > maxLevel)
-        {
-            return;
-        }
-
-        if (mapController == null)
-        {
-            return;
-        }
-
-        mapController.InitMap(nextLevel);
+        if (nextLevel > maxLevel) return;
+        if (mapController == null) return;
         currentLevel = nextLevel;
         SaveCurrentProgress();
-        StartLevelTimer();
-        StateManager.ToPlaying();
     }
 
-    public int GetCurrentLevel()
-    {
-        return currentLevel;    
-    }
+    public int GetCurrentLevel() => currentLevel;
 
     private void LoadSavedProgress()
     {
         PlayerProgressData progress = SaveManager.LoadProgress();
-        currentLevel = Mathf.Max(1, Mathf.Min(progress.currentLevel, GetMaxAvailableLevel()));
+        currentLevel = Mathf.Max(GameConstants.MIN_LEVEL, Mathf.Min(progress.currentLevel, GetMaxAvailableLevel()));
     }
 
     private void SaveCurrentProgress()
@@ -111,27 +61,20 @@ public class GamePlayManager : MonoBehaviour
     private int GetMaxAvailableLevel()
     {
         int level = 1;
-
         while (File.Exists(Path.Combine(Application.streamingAssetsPath, "Levels", $"level{level + 1}.json")))
         {
             level++;
         }
-
         return level;
     }
 
     private void StartLevelTimer()
     {
-        if (mapController == null || gamePlayUI == null)
-        {
-            return;
-        }
-
+        if (mapController == null || gamePlayUI == null) return;
         LevelData levelData = mapController.GetCurrentLevelData();
         if (levelData != null)
         {
             gamePlayUI.StartTimer(levelData.timeLimit);
         }
     }
-
 }

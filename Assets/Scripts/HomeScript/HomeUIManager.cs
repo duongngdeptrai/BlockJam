@@ -10,22 +10,57 @@ public class HomeUIManager : MonoBehaviour
 
     private void Awake()
     {
-        playButton.onClick.AddListener(OnPlayButtonClicked);
+        if (playButton != null)
+        {
+            //playButton.onClick.AddListener(OnPlayButtonClicked);
+        }
+        else
+        {
+            Debug.LogError("HomeUIManager: playButton is not assigned in Inspector.");
+        }
+
+        if (settingsButton != null)
+        {
+            //settingsButton.onClick.AddListener(OnSettingsButtonClicked);
+        }
+        else
+        {
+            Debug.LogError("HomeUIManager: settingsButton is not assigned in Inspector.");
+        }
     }
 
     private void OnEnable()
     {
-        if (txtLevel != null && GamePlayManager.Instance != null)
+        if (txtLevel != null)
         {
-            txtLevel.text = $"Level\n{GamePlayManager.Instance.GetCurrentLevel()}";
+            if (GamePlayManager.Instance != null)
+            {
+                txtLevel.text = $"Level\n{GamePlayManager.Instance.GetCurrentLevel()}";
+            }
+            else
+            {
+                Debug.LogError("HomeUIManager: GamePlayManager.Instance is null! Cannot display current level.");
+                txtLevel.text = "Level\n?";
+            }
+        }
+        else
+        {
+            Debug.LogError("HomeUIManager: txtLevel is not assigned in Inspector.");
         }
     }
 
-    private void OnPlayButtonClicked()
+    public void OnPlayButtonClicked()
     {
-        if (GamePlayManager.Instance != null)
+        if (GamePlayManager.Instance == null)
         {
-            GamePlayManager.Instance.StartPlaying();
+            Debug.LogError("HomeUIManager: GamePlayManager.Instance is null! Cannot start playing.");
+            return;
         }
+        GamePlayManager.Instance.StartPlaying();
+    }
+
+    public void OnSettingsButtonClicked()
+    {
+        Debug.Log("Settings button clicked.");
     }
 }
