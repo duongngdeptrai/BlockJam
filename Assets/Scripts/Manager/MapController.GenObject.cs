@@ -82,11 +82,16 @@ public partial class MapController : MonoBehaviour
 
             Block block = Instantiate(blockPrefab, blockContainer);
             block.transform.position = transform.position + new Vector3(
-                blockData.column - (columns - 1) / 2f,
-                -(blockData.row - (rows - 1) / 2f),
-                0);
+            blockData.column - (columns - 1) / 2f,
+            -(blockData.row - (rows - 1) / 2f),
+            0);
             ColorType colorType = GetColorTypeFromString(blockData.color);
             block.SetColorBlock(colorType);
+            block.SetHasMine(blockData.hasMine);
+            if (blockData.hasMine)
+            {
+                block.SetMineCount(blockData.mineCount);
+            }
             listBlock.Add(block);
         }
     }
@@ -106,9 +111,9 @@ public partial class MapController : MonoBehaviour
                 }
                 var grid = Instantiate(Grid, gridContainer);
                 grid.transform.position = transform.position + new Vector3(
-                    j - (columns - 1) / 2f,
-                    i - (rows - 1) / 2f,
-                    0);
+                j - (columns - 1) / 2f,
+                i - (rows - 1) / 2f,
+                0);
             }
         }
     }
@@ -116,9 +121,9 @@ public partial class MapController : MonoBehaviour
     private Vector3 CalculateWorldPosition(int row, int column, string direction)
     {
         Vector3 pos = new Vector3(
-            +(column - (columns - 1) / 2f),
-            -(row - (rows - 1) / 2f),
-            0);
+        +(column - (columns - 1) / 2f),
+        -(row - (rows - 1) / 2f),
+        0);
         return direction switch
         {
             "Down" => pos + new Vector3(0, -0.5f, 0),
@@ -139,6 +144,25 @@ public partial class MapController : MonoBehaviour
             "Right" => Quaternion.Euler(0, 0, 270),
             _ => Quaternion.Euler(0, 0, 0)
         };
+    }
+
+    public void InitMapFromData(LevelData data)
+    {
+        if (data == null)
+        {
+            Debug.LogError("InitMapFromData: data is null!");
+            return;
+        }
+
+        Clear();
+        currentLevelData = data;
+        rows = data.rows;
+        columns = data.columns;
+
+        GenWalls();
+        GenDoors();
+        GenGrid();
+        GenBlocks();
     }
 
     private ColorType GetColorTypeFromString(string colorString)

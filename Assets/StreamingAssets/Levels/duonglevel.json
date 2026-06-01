@@ -1,0 +1,31 @@
+{
+    "level": {
+        "rows": 7,
+        "columns": 14,
+        "timeLimit": 120.0,
+        "blocks": [
+            {
+                "blockType": "block1x1",
+                "row": 2,
+                "column": 4,
+                "color": "Red"
+            },
+            {
+                "blockType": "block2x3",
+                "row": 2,
+                "column": 9,
+                "color": "Red"
+            }
+        ],
+        "doors": [
+            {
+                "row": -1,
+                "column": 5,
+                "direction": "Up",
+                "doorType": "door2",
+                "color": "Red"
+            }
+        ],
+        "walls": []
+    }
+}

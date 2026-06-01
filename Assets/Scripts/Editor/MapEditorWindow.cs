@@ -8,60 +8,57 @@ public class MapEditorWindow : EditorWindow
     private int rows = 7;
     private int columns = 14;
     private float timeLimit = 120f;
-    
-    // Blocks
     private List<BlockData> blocks = new List<BlockData>();
-    private Vector2 blockScrollPos;
-    private string selectedBlockType = "block1x1";
-    private int blockRow = 0;
-    private int blockColumn = 0;
-    private string blockColor = "Red";
-    
-    // Doors
     private List<DoorSpawnData> doors = new List<DoorSpawnData>();
-    private Vector2 doorScrollPos;
-    private int doorRow = 0;
-    private int doorColumn = 0;
+    private List<WallSpawnData> walls = new List<WallSpawnData>();
+
+    private enum Tool { Select, PlaceBlock, PlaceDoor, PlaceWall, Eraser }
+    private Tool currentTool = Tool.PlaceBlock;
+    private string selectedBlockType = "block1x1";
+    private string selectedColor = "Red";
+    private bool placeBlockHasMine = false;
+    private int placeBlockMineCount = 1;
     private string doorDirection = "Up";
     private string doorType = "door1";
     private string doorColor = "Red";
-    
-    // Walls
-    private List<WallSpawnData> walls = new List<WallSpawnData>();
-    private Vector2 wallScrollPos;
-    private int wallRow = 0;
-    private int wallColumn = 0;
     private string wallDirection = "Up";
-    
-    // Save/Load
-    private string levelName = "level";
-    private GUIStyle headerStyle;
-    private GUIStyle boxStyle;
-    private bool stylesInitialized = false;
-    private Vector2 mainScrollPos;
+
+    private int selectedBlockIndex = -1;
+    private int selectedDoorIndex = -1;
+    private int selectedWallIndex = -1;
+    private bool hasSelection => selectedBlockIndex >= 0 || selectedDoorIndex >= 0 || selectedWallIndex >= 0;
+
+    private bool isMouseDown = false;
+    private Vector2Int? hoverCell = null;
+    private Vector2Int? dragStartCell = null;
+
+    private CommandHistory commandHistory = new CommandHistory();
+    private Vector2 scrollPos;
     private bool showPreview = true;
-    private bool blocksExpanded = true;
-    private bool doorsExpanded = true;
-    private bool wallsExpanded = true;
-    private bool blockCreateExpanded = true;
-    private bool doorCreateExpanded = true;
-    private bool wallCreateExpanded = true;
-    
+    private string levelName = "level";
+
     private string[] blockTypes = { "block1x1", "block1x2", "block1x3", "block1x4", "block2x2", "block2x3", "blockLShape", "blockTShape", "blockZShape" };
     private string[] colors = { "Red", "Green", "Blue", "Yellow", "Purple", "Orange", "None" };
     private string[] directions = { "Up", "Down", "Left", "Right" };
     private string[] doorTypes = { "door1", "door2", "door3", "door4" };
-    
+
+    private GUIStyle headerStyle;
+    private GUIStyle boxStyle;
+    private GUIStyle toolButtonStyle;
+    private GUIStyle toolButtonActiveStyle;
+    private bool stylesInitialized = false;
+    // gridPreviewRect removed — unused
+
     [MenuItem("Window/PikaGame/Map Editor")]
     public static void ShowWindow()
     {
         GetWindow<MapEditorWindow>("Map Editor");
     }
-    
+
     private void InitializeStyles()
     {
         if (stylesInitialized) return;
-        
+
         headerStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 14,
@@ -69,722 +66,713 @@ public class MapEditorWindow : EditorWindow
             alignment = TextAnchor.MiddleLeft,
             padding = new RectOffset(5, 5, 5, 5)
         };
-        
+
         boxStyle = new GUIStyle(GUI.skin.box)
         {
             padding = new RectOffset(10, 10, 10, 10),
             margin = new RectOffset(5, 5, 5, 5)
         };
-        
+
+        toolButtonStyle = new GUIStyle(GUI.skin.button)
+        {
+            fixedHeight = 28,
+            margin = new RectOffset(2, 2, 2, 2)
+        };
+
+        toolButtonActiveStyle = new GUIStyle(GUI.skin.button)
+        {
+            fixedHeight = 28,
+            margin = new RectOffset(2, 2, 2, 2)
+        };
+        toolButtonActiveStyle.normal.textColor = Color.cyan;
+
         stylesInitialized = true;
     }
-    
+
+    public int Rows => rows;
+    public int Columns => columns;
+    public float TimeLimit => timeLimit;
+    public List<BlockData> Blocks => blocks;
+    public List<DoorSpawnData> Doors => doors;
+    public List<WallSpawnData> Walls => walls;
+    public void SetRows(int value) => rows = value;
+    public void SetColumns(int value) => columns = value;
+    public void SetTimeLimit(float value) => timeLimit = value;
+
     private void OnGUI()
     {
-        // Ensure styles are initialized
         InitializeStyles();
-        
-        mainScrollPos = GUILayout.BeginScrollView(mainScrollPos);
+        HandleKeyboard();
+
+        scrollPos = GUILayout.BeginScrollView(scrollPos);
         GUILayout.BeginVertical();
-        
-        // Title
-        GUILayout.Label("PikaGame Map Editor", EditorStyles.boldLabel);
-        EditorGUILayout.Space(5);
-        
-        // Preview Toggle
+
         EditorGUILayout.BeginHorizontal();
-        showPreview = GUILayout.Toggle(showPreview, "Show Map Preview", GUILayout.Width(150));
+        GUILayout.Label("PikaGame Level Editor", EditorStyles.boldLabel);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Preview Level", GUILayout.Width(120), GUILayout.Height(26)))
+            StartPreview();
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.Space(5);
-        
-        // Preview Section
+
+        DrawToolbar();
+        EditorGUILayout.Space(5);
+
+        EditorGUILayout.BeginHorizontal();
         if (showPreview)
-        {
-            DrawMapPreview();
-            EditorGUILayout.Space(10);
-        }
-        
-        // Map Settings
-        DrawMapSettings();
-        EditorGUILayout.Space(10);
-        
-        // Blocks Section
-        DrawBlocksSection();
-        EditorGUILayout.Space(10);
-        
-        // Doors Section
-        DrawDoorsSection();
-        EditorGUILayout.Space(10);
-        
-        // Walls Section
-        DrawWallsSection();
-        EditorGUILayout.Space(10);
-        
-        // Save/Load Section
-        DrawSaveLoadSection();
-        
+            DrawInteractiveGrid();
+
+        EditorGUILayout.BeginVertical(GUILayout.Width(220));
+        DrawValidationPanel();
+        EditorGUILayout.Space(5);
+        DrawMapSettingsPanel();
+        EditorGUILayout.Space(5);
+        DrawPropertyInspector();
+        EditorGUILayout.Space(5);
+        DrawSelectionList();
+        EditorGUILayout.Space(5);
+        DrawSaveLoadPanel();
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.EndHorizontal();
+
         GUILayout.EndVertical();
         GUILayout.EndScrollView();
     }
-    
-    private void DrawMapPreview()
+
+    private void HandleKeyboard()
     {
-        EditorGUILayout.LabelField("Map Preview", headerStyle);
+        bool ctrl = Event.current.control || Event.current.command;
+        Event e = Event.current;
+        if (e.type != EventType.KeyDown) return;
+
+        if (ctrl && e.keyCode == KeyCode.Z)
+        {
+            commandHistory.Undo();
+            ClearSelection();
+            e.Use();
+        }
+        else if (ctrl && e.keyCode == KeyCode.Y)
+        {
+            commandHistory.Redo();
+            ClearSelection();
+            e.Use();
+        }
+        else if (e.keyCode == KeyCode.Delete || e.keyCode == KeyCode.Backspace)
+        {
+            if (hasSelection && GUIUtility.keyboardControl == 0)
+            {
+                DeleteSelected();
+                e.Use();
+            }
+        }
+        else if (e.keyCode == KeyCode.Escape)
+        {
+            ClearSelection();
+            currentTool = Tool.Select;
+            Repaint();
+        }
+    }
+
+    private void DrawToolbar()
+    {
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Select", currentTool == Tool.Select ? toolButtonActiveStyle : toolButtonStyle, GUILayout.Width(80)))
+            currentTool = Tool.Select;
+        if (GUILayout.Button("Block", currentTool == Tool.PlaceBlock ? toolButtonActiveStyle : toolButtonStyle, GUILayout.Width(80)))
+            currentTool = Tool.PlaceBlock;
+        if (GUILayout.Button("Door", currentTool == Tool.PlaceDoor ? toolButtonActiveStyle : toolButtonStyle, GUILayout.Width(80)))
+            currentTool = Tool.PlaceDoor;
+        if (GUILayout.Button("Wall", currentTool == Tool.PlaceWall ? toolButtonActiveStyle : toolButtonStyle, GUILayout.Width(80)))
+            currentTool = Tool.PlaceWall;
+        if (GUILayout.Button("Eraser", currentTool == Tool.Eraser ? toolButtonActiveStyle : toolButtonStyle, GUILayout.Width(80)))
+            currentTool = Tool.Eraser;
+        GUILayout.FlexibleSpace();
+
+        GUI.enabled = commandHistory.CanUndo;
+        if (GUILayout.Button("Undo", GUILayout.Width(70)))
+        {
+            commandHistory.Undo();
+            ClearSelection();
+        }
+        GUI.enabled = true;
+        GUI.enabled = commandHistory.CanRedo;
+        if (GUILayout.Button("Redo", GUILayout.Width(70)))
+        {
+            commandHistory.Redo();
+            ClearSelection();
+        }
+        GUI.enabled = true;
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        if (currentTool == Tool.PlaceBlock)
+        {
+            GUILayout.Label("Type:", GUILayout.Width(35));
+            int typeIdx = System.Array.IndexOf(blockTypes, selectedBlockType);
+            typeIdx = EditorGUILayout.Popup(typeIdx, blockTypes, GUILayout.Width(100));
+            selectedBlockType = blockTypes[typeIdx];
+            GUILayout.Label("Color:", GUILayout.Width(40));
+            int colorIdx = System.Array.IndexOf(colors, selectedColor);
+            colorIdx = EditorGUILayout.Popup(colorIdx, colors, GUILayout.Width(80));
+            selectedColor = colors[colorIdx];
+            placeBlockHasMine = EditorGUILayout.Toggle("Mine", placeBlockHasMine, GUILayout.Width(55));
+            if (placeBlockHasMine)
+            {
+                placeBlockMineCount = EditorGUILayout.IntField(placeBlockMineCount, GUILayout.Width(50));
+                if (placeBlockMineCount < 1) placeBlockMineCount = 1;
+            }
+        }
+        else if (currentTool == Tool.PlaceDoor)
+        {
+            GUILayout.Label("Dir:", GUILayout.Width(30));
+            int dirIdx = System.Array.IndexOf(directions, doorDirection);
+            dirIdx = EditorGUILayout.Popup(dirIdx, directions, GUILayout.Width(70));
+            doorDirection = directions[dirIdx];
+            GUILayout.Label("Type:", GUILayout.Width(35));
+            int typeIdx = System.Array.IndexOf(doorTypes, doorType);
+            typeIdx = EditorGUILayout.Popup(typeIdx, doorTypes, GUILayout.Width(70));
+            doorType = doorTypes[typeIdx];
+            GUILayout.Label("Color:", GUILayout.Width(40));
+            int colorIdx = System.Array.IndexOf(colors, doorColor);
+            colorIdx = EditorGUILayout.Popup(colorIdx, colors, GUILayout.Width(70));
+            doorColor = colors[colorIdx];
+        }
+        else if (currentTool == Tool.PlaceWall)
+        {
+            GUILayout.Label("Dir:", GUILayout.Width(30));
+            int dirIdx = System.Array.IndexOf(directions, wallDirection);
+            dirIdx = EditorGUILayout.Popup(dirIdx, directions, GUILayout.Width(80));
+            wallDirection = directions[dirIdx];
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void DrawInteractiveGrid()
+    {
+        EditorGUILayout.LabelField("Map Grid", headerStyle);
         EditorGUILayout.BeginVertical(boxStyle);
-        
-        const int labelSize = 18;
-        int cellSize = 24;
-        int previewColumns = columns + 2;
+
         int previewRows = rows + 2;
-        int totalWidth = labelSize + previewColumns * cellSize;
-        int totalHeight = labelSize + previewRows * cellSize;
+        int previewColumns = columns + 2;
+        int totalWidth = LevelEditorGrid.LabelSize + previewColumns * LevelEditorGrid.CellSize;
+        int totalHeight = LevelEditorGrid.LabelSize + previewRows * LevelEditorGrid.CellSize;
 
         Rect previewArea = GUILayoutUtility.GetRect(totalWidth, totalHeight);
+        // gridPreviewRect removed
+
         EditorGUI.DrawRect(previewArea, new Color(0.12f, 0.12f, 0.12f));
+        Rect gridOrigin = new Rect(previewArea.x + LevelEditorGrid.LabelSize, previewArea.y + LevelEditorGrid.LabelSize, 0, 0);
 
-        Rect gridOrigin = new Rect(previewArea.x + labelSize, previewArea.y + labelSize, previewColumns * cellSize, previewRows * cellSize);
-        Color borderColor = new Color(0.28f, 0.28f, 0.28f);
-        Color innerColor = new Color(0.18f, 0.18f, 0.18f);
-        Color outerColor = new Color(0.10f, 0.10f, 0.10f);
-
-        for (int visualRow = 0; visualRow < previewRows; visualRow++)
-        {
-            int mapRow = visualRow - 1;
-            for (int visualColumn = 0; visualColumn < previewColumns; visualColumn++)
-            {
-                int mapColumn = visualColumn - 1;
-                Rect cellRect = new Rect(
-                    gridOrigin.x + visualColumn * cellSize,
-                    gridOrigin.y + visualRow * cellSize,
-                    cellSize,
-                    cellSize);
-
-                bool insidePlayable = IsInsidePlayableArea(mapRow, mapColumn);
-                EditorGUI.DrawRect(cellRect, insidePlayable ? innerColor : outerColor);
-                DrawCellBorder(cellRect, borderColor);
-            }
-        }
-
-        GUIStyle indexStyle = EditorStyles.centeredGreyMiniLabel;
-        for (int visualColumn = 0; visualColumn < previewColumns; visualColumn++)
-        {
-            int mapColumn = visualColumn - 1;
-            Rect labelRect = new Rect(
-                gridOrigin.x + visualColumn * cellSize,
-                previewArea.y,
-                cellSize,
-                labelSize);
-            GUI.Label(labelRect, mapColumn.ToString(), indexStyle);
-        }
-
-        for (int visualRow = 0; visualRow < previewRows; visualRow++)
-        {
-            int mapRow = visualRow - 1;
-            Rect labelRect = new Rect(
-                previewArea.x,
-                gridOrigin.y + visualRow * cellSize,
-                labelSize,
-                cellSize);
-            GUI.Label(labelRect, mapRow.ToString(), indexStyle);
-        }
+        LevelEditorGrid.DrawGridBackground(gridOrigin, rows, columns);
+        HandleGridMouse(gridOrigin);
+        DrawGhostPreview(gridOrigin);
+        DrawSelectionHighlight(gridOrigin);
 
         foreach (var block in blocks)
-        {
-            DrawBlockPreview(block, gridOrigin, cellSize, borderColor);
-        }
-
+            LevelEditorGrid.DrawBlockFootprint(gridOrigin, block, rows, columns);
         foreach (var door in doors)
-        {
-            DrawDoorPreview(door, gridOrigin, cellSize);
-        }
-        
-        EditorGUILayout.Space(10);
-        EditorGUILayout.LabelField($"Map Size: {rows}x{columns} (preview shows -1 and {rows}/{columns} border cells)", EditorStyles.miniLabel);
-        EditorGUILayout.LabelField($"Blocks: {blocks.Count} | Doors: {doors.Count} | Walls: {walls.Count}", EditorStyles.miniLabel);
-        
+            LevelEditorGrid.DrawDoor(gridOrigin, door, rows, columns);
+        foreach (var wall in walls)
+            LevelEditorGrid.DrawWall(gridOrigin, wall, rows, columns);
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField($"Map: {rows}x{columns} | Blocks: {blocks.Count} | Doors: {doors.Count} | Walls: {walls.Count}", EditorStyles.centeredGreyMiniLabel);
         EditorGUILayout.EndVertical();
     }
 
-    private void DrawBlockPreview(BlockData block, Rect gridOrigin, int cellSize, Color borderColor)
+    private void HandleGridMouse(Rect gridOrigin)
     {
-        if (block == null)
+        Event e = Event.current;
+        if (e.type == EventType.Repaint) return;
+
+        Rect gridArea = new Rect(
+            gridOrigin.x - LevelEditorGrid.LabelSize,
+            gridOrigin.y - LevelEditorGrid.LabelSize,
+            (columns + 2) * LevelEditorGrid.CellSize,
+            (rows + 2) * LevelEditorGrid.CellSize);
+
+        if (!gridArea.Contains(e.mousePosition)) return;
+
+        Vector2Int visualCell = LevelEditorGrid.ScreenToGrid(e.mousePosition, gridOrigin);
+        int mapRow = visualCell.y - 1;
+        int mapCol = visualCell.x - 1;
+
+        bool inPlayable = LevelEditorGrid.IsInBounds(mapRow, mapCol, rows, columns);
+        bool onAnyBorder = !inPlayable && LevelEditorGrid.IsDoorBorderCell(mapRow, mapCol, rows, columns);
+        bool inBounds = inPlayable || onAnyBorder;
+
+        if (inBounds)
+            hoverCell = new Vector2Int(mapCol, mapRow);
+        else
+            hoverCell = null;
+
+        if (e.type == EventType.MouseDown && e.button == 0)
         {
-            return;
+            isMouseDown = true;
+            dragStartCell = inBounds ? new Vector2Int(mapCol, mapRow) : (Vector2Int?)null;
+            e.Use();
         }
 
-        List<Vector2Int> footprint = GetBlockFootprint(block.blockType);
-        Color fillColor = GetColorFromString(block.color);
-
-        for (int i = 0; i < footprint.Count; i++)
+        if (e.type == EventType.MouseDrag && isMouseDown && e.button == 0)
         {
-            Vector2Int offset = footprint[i];
-            int mapRow = block.row + offset.y;
-            int mapColumn = block.column + offset.x;
-
-            if (!IsInsidePreviewArea(mapRow, mapColumn))
+            if (inBounds && (dragStartCell == null || dragStartCell.Value != new Vector2Int(mapCol, mapRow)))
             {
-                continue;
+                Repaint();
             }
-
-            Rect cellRect = GetPreviewCellRect(gridOrigin, cellSize, mapRow, mapColumn);
-            EditorGUI.DrawRect(cellRect, fillColor);
-            DrawCellBorder(cellRect, borderColor);
+            e.Use();
         }
 
-        if (IsInsidePreviewArea(block.row, block.column))
+        if (e.type == EventType.MouseUp && e.button == 0 && isMouseDown)
         {
-            Rect anchorRect = GetPreviewCellRect(gridOrigin, cellSize, block.row, block.column);
-            GUI.Label(anchorRect, GetBlockShortLabel(block.blockType), EditorStyles.centeredGreyMiniLabel);
-        }
-    }
-
-    private void DrawDoorPreview(DoorSpawnData door, Rect gridOrigin, int cellSize)
-    {
-        if (door == null)
-        {
-            return;
-        }
-        // Use explicit row/column from the door data so editor shows exact coordinates
-        int mapRow = door.row;
-        int mapColumn = door.column;
-
-        if (!IsInsidePreviewArea(mapRow, mapColumn))
-        {
-            return;
-        }
-
-        Rect doorRect = GetPreviewCellRect(gridOrigin, cellSize, mapRow, mapColumn);
-        Color baseColor = GetColorFromString(door.color);
-        Color fillColor = new Color(baseColor.r, baseColor.g, baseColor.b, 0.70f);
-
-        EditorGUI.DrawRect(doorRect, fillColor);
-        DrawCellBorder(doorRect, Color.white);
-
-        Rect innerRect = new Rect(doorRect.x + 3, doorRect.y + 3, doorRect.width - 6, doorRect.height - 6);
-        EditorGUI.DrawRect(innerRect, new Color(0f, 0f, 0f, 0.18f));
-
-        // Draw door type prominently and direction smaller below
-        GUI.Label(doorRect, string.IsNullOrEmpty(door.doorType) ? GetDoorShortLabel(door) : door.doorType, EditorStyles.boldLabel);
-        string dir = door.direction switch { "Up" => "^", "Down" => "v", "Left" => "<", "Right" => ">", _ => "?" };
-        Rect dirRect = new Rect(doorRect.x, doorRect.y + doorRect.height * 0.5f, doorRect.width, doorRect.height * 0.5f);
-        GUI.Label(dirRect, dir, EditorStyles.miniLabel);
-    }
-
-    private Rect GetPreviewCellRect(Rect gridOrigin, int cellSize, int mapRow, int mapColumn)
-    {
-        int visualRow = mapRow + 1;
-        int visualColumn = mapColumn + 1;
-
-        return new Rect(
-            gridOrigin.x + visualColumn * cellSize,
-            gridOrigin.y + visualRow * cellSize,
-            cellSize,
-            cellSize);
-    }
-
-    private bool IsInsidePreviewArea(int row, int column)
-    {
-        return row >= -1 && row <= rows && column >= -1 && column <= columns;
-    }
-
-    private bool IsInsidePlayableArea(int row, int column)
-    {
-        return row >= 0 && row < rows && column >= 0 && column < columns;
-    }
-
-    private void DrawCellBorder(Rect rect, Color borderColor)
-    {
-        EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1), borderColor);
-        EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1, rect.width, 1), borderColor);
-        EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1, rect.height), borderColor);
-        EditorGUI.DrawRect(new Rect(rect.xMax - 1, rect.y, 1, rect.height), borderColor);
-    }
-
-    private Vector2Int GetDoorPreviewCell(DoorSpawnData door)
-    {
-        int row = door.row;
-        int column = door.column;
-
-        return door.direction switch
-        {
-            "Up" => new Vector2Int(column, row - 1),
-            "Down" => new Vector2Int(column, row + 1),
-            "Left" => new Vector2Int(column - 1, row),
-            "Right" => new Vector2Int(column + 1, row),
-            _ => new Vector2Int(column, row)
-        };
-    }
-
-    private List<Vector2Int> GetBlockFootprint(string blockType)
-    {
-        List<Vector2Int> footprint = new List<Vector2Int>();
-
-        switch (blockType)
-        {
-            case "block1x1":
-                footprint.Add(new Vector2Int(0, 0));
-                break;
-            case "block1x2":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(0, 1));
-                break;
-            case "block1x3":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(0, 1));
-                footprint.Add(new Vector2Int(0, 2));
-                break;
-            case "block1x4":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(0, 1));
-                footprint.Add(new Vector2Int(0, 2));
-                footprint.Add(new Vector2Int(0, 3));
-                break;
-            case "block2x2":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(1, 0));
-                footprint.Add(new Vector2Int(0, 1));
-                footprint.Add(new Vector2Int(1, 1));
-                break;
-            case "block2x3":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(1, 0));
-                footprint.Add(new Vector2Int(0, 1));
-                footprint.Add(new Vector2Int(1, 1));
-                footprint.Add(new Vector2Int(0, 2));
-                footprint.Add(new Vector2Int(1, 2));
-                break;
-            case "blockLShape":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(0, 1));
-                footprint.Add(new Vector2Int(0, 2));
-                footprint.Add(new Vector2Int(1, 2));
-                break;
-            case "blockTShape":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(1, 0));
-                footprint.Add(new Vector2Int(2, 0));
-                footprint.Add(new Vector2Int(1, 1));
-                break;
-            case "blockZShape":
-                footprint.Add(new Vector2Int(0, 0));
-                footprint.Add(new Vector2Int(1, 0));
-                footprint.Add(new Vector2Int(1, 1));
-                footprint.Add(new Vector2Int(2, 1));
-                break;
-            default:
-                footprint.Add(new Vector2Int(0, 0));
-                break;
-        }
-
-        return footprint;
-    }
-
-    private string GetBlockShortLabel(string blockType)
-    {
-        return blockType switch
-        {
-            "block1x1" => "1",
-            "block1x2" => "2",
-            "block1x3" => "3",
-            "block1x4" => "4",
-            "block2x2" => "2x2",
-            "block2x3" => "2x3",
-            "blockLShape" => "L",
-            "blockTShape" => "T",
-            "blockZShape" => "Z",
-            _ => "?"
-        };
-    }
-
-    private string GetDoorShortLabel(DoorSpawnData door)
-    {
-        string directionCode = door.direction switch
-        {
-            "Up" => "^",
-            "Down" => "v",
-            "Left" => "<",
-            "Right" => ">",
-            _ => "?"
-        };
-
-        return string.IsNullOrEmpty(door.doorType) ? directionCode : $"{door.doorType}\n{directionCode}";
-    }
-    
-    private Color GetColorFromString(string colorName)
-    {
-        return colorName switch
-        {
-            "Red" => new Color(1f, 0.2f, 0.2f),
-            "Green" => new Color(0.2f, 1f, 0.2f),
-            "Blue" => new Color(0.2f, 0.2f, 1f),
-            "Yellow" => new Color(1f, 1f, 0.2f),
-            "Purple" => new Color(1f, 0.2f, 1f),
-            "Orange" => new Color(1f, 0.6f, 0.2f),
-            "None" => new Color(0.5f, 0.5f, 0.5f),
-            _ => Color.white
-        };
-    }
-    
-    private void DrawMapSettings()
-    {
-        EditorGUILayout.LabelField("Map Settings", headerStyle);
-        
-        EditorGUILayout.BeginVertical(boxStyle);
-        
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label("Rows", GUILayout.Width(100));
-        rows = EditorGUILayout.IntSlider(rows, 5, 20);
-        EditorGUILayout.EndHorizontal();
-        
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label("Columns", GUILayout.Width(100));
-        columns = EditorGUILayout.IntSlider(columns, 10, 20);
-        EditorGUILayout.EndHorizontal();
-        
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label("Time Limit", GUILayout.Width(100));
-        timeLimit = EditorGUILayout.FloatField(timeLimit);
-        EditorGUILayout.EndHorizontal();
-        
-        EditorGUILayout.EndVertical();
-    }
-    
-    private void DrawBlocksSection()
-    {
-        EditorGUILayout.LabelField("Blocks", headerStyle);
-        
-        EditorGUILayout.BeginVertical(boxStyle);
-        blocksExpanded = EditorGUILayout.Foldout(blocksExpanded, $"Blocks ({blocks.Count})", true);
-
-        if (blocksExpanded)
-        {
-            blockCreateExpanded = EditorGUILayout.Foldout(blockCreateExpanded, "Add Block", true);
-            if (blockCreateExpanded)
+            isMouseDown = false;
+            if (inBounds && dragStartCell != null)
             {
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Type", GUILayout.Width(60));
-                int typeIndex = GetPopupIndex(blockTypes, selectedBlockType);
-                typeIndex = EditorGUILayout.Popup(typeIndex, blockTypes, GUILayout.Width(120));
-                selectedBlockType = blockTypes[typeIndex];
-                EditorGUILayout.EndHorizontal();
+                HandleGridClick(mapRow, mapCol);
+            }
+            dragStartCell = null;
+            e.Use();
+        }
 
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Row", GUILayout.Width(60));
-                blockRow = EditorGUILayout.IntField(blockRow, GUILayout.Width(60));
-                GUILayout.Label("Column", GUILayout.Width(60));
-                blockColumn = EditorGUILayout.IntField(blockColumn, GUILayout.Width(60));
-                EditorGUILayout.EndHorizontal();
+        if (e.type == EventType.MouseMove)
+            Repaint();
+    }
 
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Color", GUILayout.Width(60));
-                int colorIndex = GetPopupIndex(colors, blockColor);
-                colorIndex = EditorGUILayout.Popup(colorIndex, colors, GUILayout.Width(120));
-                blockColor = colors[colorIndex];
-                EditorGUILayout.EndHorizontal();
+    private void HandleGridClick(int row, int col)
+    {
+        switch (currentTool)
+        {
+            case Tool.Select: SelectObjectAt(row, col); break;
+            case Tool.PlaceBlock: PlaceBlockAt(row, col); break;
+            case Tool.PlaceDoor: PlaceDoorAt(row, col); break;
+            case Tool.PlaceWall: PlaceWallAt(row, col); break;
+            case Tool.Eraser: EraseAt(row, col); break;
+        }
+        Repaint();
+    }
 
-                if (GUILayout.Button("Add Block", GUILayout.Height(26)))
+    private void SelectObjectAt(int row, int col)
+    {
+        ClearSelection();
+        for (int i = 0; i < blocks.Count; i++)
+        {
+            var footprint = LevelEditorGrid.GetBlockFootprint(blocks[i].blockType);
+            foreach (var offset in footprint)
+            {
+                if (blocks[i].row + offset.y == row && blocks[i].column + offset.x == col)
                 {
-                    AddBlock();
+                    selectedBlockIndex = i;
+                    return;
                 }
             }
-
-            EditorGUILayout.Space(4);
-
-            blockScrollPos = EditorGUILayout.BeginScrollView(blockScrollPos, GUILayout.Height(170));
-            for (int i = 0; i < blocks.Count; i++)
-            {
-                BlockData block = blocks[i];
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"#{i}", GUILayout.Width(28));
-
-                int blockTypeIndex = GetPopupIndex(blockTypes, block.blockType);
-                blockTypeIndex = EditorGUILayout.Popup(blockTypeIndex, blockTypes, GUILayout.Width(110));
-                block.blockType = blockTypes[blockTypeIndex];
-
-                block.row = EditorGUILayout.IntField(block.row, GUILayout.Width(45));
-                block.column = EditorGUILayout.IntField(block.column, GUILayout.Width(45));
-
-                int blockColorIndex = GetPopupIndex(colors, block.color);
-                blockColorIndex = EditorGUILayout.Popup(blockColorIndex, colors, GUILayout.Width(90));
-                block.color = colors[blockColorIndex];
-
-                if (GUILayout.Button("X", GUILayout.Width(24)))
-                {
-                    blocks.RemoveAt(i);
-                    i--;
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.EndVertical();
-                    continue;
-                }
-
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.EndVertical();
-            }
-            EditorGUILayout.EndScrollView();
-
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Clear All Blocks"))
-            {
-                blocks.Clear();
-            }
-            EditorGUILayout.EndHorizontal();
         }
-        
-        EditorGUILayout.EndVertical();
-    }
-    
-    private void DrawDoorsSection()
-    {
-        EditorGUILayout.LabelField("Doors", headerStyle);
-        
-        EditorGUILayout.BeginVertical(boxStyle);
-        doorsExpanded = EditorGUILayout.Foldout(doorsExpanded, $"Doors ({doors.Count})", true);
-
-        if (doorsExpanded)
+        for (int i = 0; i < doors.Count; i++)
         {
-            doorCreateExpanded = EditorGUILayout.Foldout(doorCreateExpanded, "Add Door", true);
-            if (doorCreateExpanded)
+            var foot = LevelEditorGrid.GetDoorFootprint(doors[i].doorType, doors[i].direction);
+            foreach (var offset in foot)
             {
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Row", GUILayout.Width(60));
-                doorRow = EditorGUILayout.IntField(doorRow, GUILayout.Width(60));
-                GUILayout.Label("Column", GUILayout.Width(60));
-                doorColumn = EditorGUILayout.IntField(doorColumn, GUILayout.Width(60));
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Direction", GUILayout.Width(80));
-                int dirIndex = GetPopupIndex(directions, doorDirection);
-                dirIndex = EditorGUILayout.Popup(dirIndex, directions, GUILayout.Width(100));
-                doorDirection = directions[dirIndex];
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Type", GUILayout.Width(60));
-                int typeIndex = GetPopupIndex(doorTypes, doorType);
-                typeIndex = EditorGUILayout.Popup(typeIndex, doorTypes, GUILayout.Width(100));
-                doorType = doorTypes[typeIndex];
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Color", GUILayout.Width(60));
-                int colorIndex = GetPopupIndex(colors, doorColor);
-                colorIndex = EditorGUILayout.Popup(colorIndex, colors, GUILayout.Width(100));
-                doorColor = colors[colorIndex];
-                EditorGUILayout.EndHorizontal();
-
-                if (GUILayout.Button("Add Door", GUILayout.Height(26)))
+                if (doors[i].row + offset.y == row && doors[i].column + offset.x == col)
                 {
-                    AddDoor();
+                    selectedDoorIndex = i;
+                    return;
                 }
             }
-
-            EditorGUILayout.Space(4);
-
-            doorScrollPos = EditorGUILayout.BeginScrollView(doorScrollPos, GUILayout.Height(170));
-            for (int i = 0; i < doors.Count; i++)
-            {
-                DoorSpawnData door = doors[i];
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"#{i}", GUILayout.Width(28));
-
-                door.row = EditorGUILayout.IntField(door.row, GUILayout.Width(45));
-                door.column = EditorGUILayout.IntField(door.column, GUILayout.Width(45));
-
-                int doorDirectionIndex = GetPopupIndex(directions, door.direction);
-                doorDirectionIndex = EditorGUILayout.Popup(doorDirectionIndex, directions, GUILayout.Width(80));
-                door.direction = directions[doorDirectionIndex];
-
-                int doorTypeIndex = GetPopupIndex(doorTypes, door.doorType);
-                doorTypeIndex = EditorGUILayout.Popup(doorTypeIndex, doorTypes, GUILayout.Width(75));
-                door.doorType = doorTypes[doorTypeIndex];
-
-                int doorColorIndex = GetPopupIndex(colors, door.color);
-                doorColorIndex = EditorGUILayout.Popup(doorColorIndex, colors, GUILayout.Width(90));
-                door.color = colors[doorColorIndex];
-
-                if (GUILayout.Button("X", GUILayout.Width(24)))
-                {
-                    doors.RemoveAt(i);
-                    i--;
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.EndVertical();
-                    continue;
-                }
-
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.EndVertical();
-            }
-            EditorGUILayout.EndScrollView();
-
-            if (doors.Count > 0 && GUILayout.Button("Clear All Doors"))
-            {
-                doors.Clear();
-            }
         }
-        
-        EditorGUILayout.EndVertical();
-    }
-    
-    private void DrawWallsSection()
-    {
-        EditorGUILayout.LabelField("Walls", headerStyle);
-        
-        EditorGUILayout.BeginVertical(boxStyle);
-        wallsExpanded = EditorGUILayout.Foldout(wallsExpanded, $"Walls ({walls.Count})", true);
-
-        if (wallsExpanded)
+        for (int i = 0; i < walls.Count; i++)
         {
-            wallCreateExpanded = EditorGUILayout.Foldout(wallCreateExpanded, "Add Wall", true);
-            if (wallCreateExpanded)
+            if (walls[i].row == row && walls[i].column == col)
             {
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Row", GUILayout.Width(60));
-                wallRow = EditorGUILayout.IntField(wallRow, GUILayout.Width(60));
-                GUILayout.Label("Column", GUILayout.Width(60));
-                wallColumn = EditorGUILayout.IntField(wallColumn, GUILayout.Width(60));
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Direction", GUILayout.Width(80));
-                int dirIndex = GetPopupIndex(directions, wallDirection);
-                dirIndex = EditorGUILayout.Popup(dirIndex, directions, GUILayout.Width(100));
-                wallDirection = directions[dirIndex];
-                EditorGUILayout.EndHorizontal();
-
-                if (GUILayout.Button("Add Wall", GUILayout.Height(26)))
-                {
-                    AddWall();
-                }
-            }
-
-            EditorGUILayout.Space(4);
-
-            wallScrollPos = EditorGUILayout.BeginScrollView(wallScrollPos, GUILayout.Height(170));
-            for (int i = 0; i < walls.Count; i++)
-            {
-                WallSpawnData wall = walls[i];
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"#{i}", GUILayout.Width(28));
-
-                wall.row = EditorGUILayout.IntField(wall.row, GUILayout.Width(45));
-                wall.column = EditorGUILayout.IntField(wall.column, GUILayout.Width(45));
-
-                int wallDirectionIndex = GetPopupIndex(directions, wall.direction);
-                wallDirectionIndex = EditorGUILayout.Popup(wallDirectionIndex, directions, GUILayout.Width(80));
-                wall.direction = directions[wallDirectionIndex];
-
-                if (GUILayout.Button("X", GUILayout.Width(24)))
-                {
-                    walls.RemoveAt(i);
-                    i--;
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.EndVertical();
-                    continue;
-                }
-
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.EndVertical();
-            }
-            EditorGUILayout.EndScrollView();
-
-            if (walls.Count > 0 && GUILayout.Button("Clear All Walls"))
-            {
-                walls.Clear();
+                selectedWallIndex = i;
+                return;
             }
         }
-        
-        EditorGUILayout.EndVertical();
     }
 
-    private int GetPopupIndex(string[] options, string currentValue)
-    {
-        int index = System.Array.IndexOf(options, currentValue);
-        return index < 0 ? 0 : index;
-    }
-    
-    private void DrawSaveLoadSection()
-    {
-        EditorGUILayout.LabelField("Save / Load", headerStyle);
-        
-        EditorGUILayout.BeginVertical(boxStyle);
-        
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label("Level Name", GUILayout.Width(100));
-        levelName = EditorGUILayout.TextField(levelName);
-        EditorGUILayout.EndHorizontal();
-        
-        EditorGUILayout.BeginHorizontal();
-        
-        if (GUILayout.Button("Save Map", GUILayout.Height(35)))
-        {
-            SaveMap();
-        }
-        
-        if (GUILayout.Button("Load Map", GUILayout.Height(35)))
-        {
-            LoadMap();
-        }
-        
-        EditorGUILayout.EndHorizontal();
-        
-        EditorGUILayout.Space(10);
-        
-        if (GUILayout.Button("New Map", GUILayout.Height(30)))
-        {
-            NewMap();
-        }
-        
-        EditorGUILayout.EndVertical();
-    }
-    
-    private void AddBlock()
+    private void PlaceBlockAt(int row, int col)
     {
         BlockData newBlock = new BlockData
         {
             blockType = selectedBlockType,
-            row = blockRow,
-            column = blockColumn,
-            color = blockColor
+            row = row,
+            column = col,
+            color = selectedColor,
+            hasMine = placeBlockHasMine,
+            mineCount = placeBlockHasMine ? placeBlockMineCount : 0
         };
-        blocks.Add(newBlock);
-    }
-    
-    private void AddDoor()
-    {
-        DoorSpawnData newDoor = new DoorSpawnData
+        if (LevelEditorGrid.HasBlockOverlap(newBlock, blocks, doors, walls, rows, columns))
         {
-            row = doorRow,
-            column = doorColumn,
-            direction = doorDirection,
-            doorType = doorType,
-            color = doorColor
-        };
-        doors.Add(newDoor);
+            EditorUtility.DisplayDialog("Cannot Place", "This position overlaps with an existing object or is out of bounds.", "OK");
+            return;
+        }
+        var cmd = new PlaceObjectCommand<BlockData>(blocks, newBlock, blocks.Count);
+        commandHistory.Execute(cmd);
+        ClearSelection();
+        selectedBlockIndex = blocks.Count - 1;
     }
-    
-    private void AddWall()
+
+    private void PlaceDoorAt(int row, int col)
     {
-        WallSpawnData newWall = new WallSpawnData
+        DoorSpawnData newDoor = new DoorSpawnData { row = row, column = col, direction = doorDirection, doorType = doorType, color = doorColor };
+        if (LevelEditorGrid.HasDoorOverlap(newDoor, blocks, doors, walls, rows, columns))
         {
-            row = wallRow,
-            column = wallColumn,
-            direction = wallDirection
-        };
-        walls.Add(newWall);
+            EditorUtility.DisplayDialog("Cannot Place", "This position overlaps or is out of bounds.", "OK");
+            return;
+        }
+        var cmd = new PlaceObjectCommand<DoorSpawnData>(doors, newDoor, doors.Count);
+        commandHistory.Execute(cmd);
+        ClearSelection();
+        selectedDoorIndex = doors.Count - 1;
     }
-    
+
+    private void PlaceWallAt(int row, int col)
+    {
+        WallSpawnData newWall = new WallSpawnData { row = row, column = col, direction = wallDirection };
+        if (LevelEditorGrid.HasWallOverlap(newWall, blocks, doors, walls, rows, columns))
+        {
+            EditorUtility.DisplayDialog("Cannot Place", "This position overlaps or is out of bounds.", "OK");
+            return;
+        }
+        var cmd = new PlaceObjectCommand<WallSpawnData>(walls, newWall, walls.Count);
+        commandHistory.Execute(cmd);
+        ClearSelection();
+        selectedWallIndex = walls.Count - 1;
+    }
+
+    private void EraseAt(int row, int col)
+    {
+        for (int i = blocks.Count - 1; i >= 0; i--)
+        {
+            var footprint = LevelEditorGrid.GetBlockFootprint(blocks[i].blockType);
+            foreach (var offset in footprint)
+            {
+                if (blocks[i].row + offset.y == row && blocks[i].column + offset.x == col)
+                {
+                    var cmd = new RemoveObjectCommand<BlockData>(blocks, blocks[i], i);
+                    commandHistory.Execute(cmd);
+                    if (selectedBlockIndex == i) ClearSelection();
+                    else if (selectedBlockIndex > i) selectedBlockIndex--;
+                    return;
+                }
+            }
+        }
+        for (int i = doors.Count - 1; i >= 0; i--)
+        {
+            var foot = LevelEditorGrid.GetDoorFootprint(doors[i].doorType, doors[i].direction);
+            foreach (var offset in foot)
+            {
+                if (doors[i].row + offset.y == row && doors[i].column + offset.x == col)
+                {
+                    var cmd = new RemoveObjectCommand<DoorSpawnData>(doors, doors[i], i);
+                    commandHistory.Execute(cmd);
+                    if (selectedDoorIndex == i) ClearSelection();
+                    else if (selectedDoorIndex > i) selectedDoorIndex--;
+                    return;
+                }
+            }
+        }
+        for (int i = walls.Count - 1; i >= 0; i--)
+        {
+            if (walls[i].row == row && walls[i].column == col)
+            {
+                var cmd = new RemoveObjectCommand<WallSpawnData>(walls, walls[i], i);
+                commandHistory.Execute(cmd);
+                if (selectedWallIndex == i) ClearSelection();
+                else if (selectedWallIndex > i) selectedWallIndex--;
+                return;
+            }
+        }
+    }
+
+    private void DeleteSelected()
+    {
+        if (selectedBlockIndex >= 0 && selectedBlockIndex < blocks.Count)
+        {
+            var cmd = new RemoveObjectCommand<BlockData>(blocks, blocks[selectedBlockIndex], selectedBlockIndex);
+            commandHistory.Execute(cmd);
+            ClearSelection();
+        }
+        else if (selectedDoorIndex >= 0 && selectedDoorIndex < doors.Count)
+        {
+            var cmd = new RemoveObjectCommand<DoorSpawnData>(doors, doors[selectedDoorIndex], selectedDoorIndex);
+            commandHistory.Execute(cmd);
+            ClearSelection();
+        }
+        else if (selectedWallIndex >= 0 && selectedWallIndex < walls.Count)
+        {
+            var cmd = new RemoveObjectCommand<WallSpawnData>(walls, walls[selectedWallIndex], selectedWallIndex);
+            commandHistory.Execute(cmd);
+            ClearSelection();
+        }
+    }
+
+    private void ClearSelection()
+    {
+        selectedBlockIndex = -1;
+        selectedDoorIndex = -1;
+        selectedWallIndex = -1;
+    }
+
+    private void DrawGhostPreview(Rect gridOrigin)
+    {
+        if (hoverCell == null) return;
+        if (isMouseDown) return;
+
+        int row = hoverCell.Value.y;
+        int col = hoverCell.Value.x;
+
+        switch (currentTool)
+        {
+            case Tool.PlaceBlock:
+                var ghostBlock = new BlockData
+                {
+                    blockType = selectedBlockType,
+                    row = row,
+                    column = col,
+                    color = selectedColor,
+                    hasMine = placeBlockHasMine,
+                    mineCount = placeBlockHasMine ? placeBlockMineCount : 0
+                };
+                bool blockValid = !LevelEditorGrid.HasBlockOverlap(ghostBlock, blocks, doors, walls, rows, columns);
+                LevelEditorGrid.DrawGhostFootprint(gridOrigin, ghostBlock, blockValid, rows, columns);
+                break;
+            case Tool.PlaceDoor:
+                var ghostDoor = new DoorSpawnData { row = row, column = col, direction = doorDirection, doorType = doorType, color = doorColor };
+                bool doorValid = !LevelEditorGrid.HasDoorOverlap(ghostDoor, blocks, doors, walls, rows, columns);
+                LevelEditorGrid.DrawGhostDoor(gridOrigin, ghostDoor, doorValid, rows, columns);
+                break;
+            case Tool.PlaceWall:
+                var ghostWall = new WallSpawnData { row = row, column = col, direction = wallDirection };
+                bool wallValid = !LevelEditorGrid.HasWallOverlap(ghostWall, blocks, doors, walls, rows, columns);
+                LevelEditorGrid.DrawGhostWall(gridOrigin, ghostWall, wallValid, rows, columns);
+                break;
+            case Tool.Eraser:
+                if (LevelEditorGrid.IsInBounds(row, col, rows, columns))
+                {
+                    int vr = row + 1;
+                    int vc = col + 1;
+                    Rect cellRect = new Rect(gridOrigin.x + vc * LevelEditorGrid.CellSize, gridOrigin.y + vr * LevelEditorGrid.CellSize, LevelEditorGrid.CellSize, LevelEditorGrid.CellSize);
+                    EditorGUI.DrawRect(cellRect, new Color(1f, 0.2f, 0.2f, 0.3f));
+                    LevelEditorGrid.DrawCellBorder(cellRect, Color.red);
+                }
+                break;
+        }
+    }
+
+    private void DrawSelectionHighlight(Rect gridOrigin)
+    {
+        if (!hasSelection) return;
+
+        if (selectedBlockIndex >= 0 && selectedBlockIndex < blocks.Count)
+        {
+            var footprint = LevelEditorGrid.GetBlockFootprint(blocks[selectedBlockIndex].blockType);
+            var offsets = new List<Vector2Int>();
+            foreach (var offset in footprint)
+                offsets.Add(new Vector2Int(blocks[selectedBlockIndex].column + offset.x, blocks[selectedBlockIndex].row + offset.y));
+            LevelEditorGrid.DrawSelectionHighlight(gridOrigin, offsets, rows, columns);
+        }
+        else if (selectedDoorIndex >= 0 && selectedDoorIndex < doors.Count)
+        {
+            var d = doors[selectedDoorIndex];
+            var offsets = new List<Vector2Int> { new Vector2Int(d.column, d.row) };
+            LevelEditorGrid.DrawSelectionHighlight(gridOrigin, offsets, rows, columns);
+        }
+        else if (selectedWallIndex >= 0 && selectedWallIndex < walls.Count)
+        {
+            var w = walls[selectedWallIndex];
+            var offsets = new List<Vector2Int> { new Vector2Int(w.column, w.row) };
+            LevelEditorGrid.DrawSelectionHighlight(gridOrigin, offsets, rows, columns);
+        }
+    }
+
+    private void DrawValidationPanel()
+    {
+        EditorGUILayout.LabelField("Validation", headerStyle);
+        EditorGUILayout.BeginVertical(boxStyle);
+
+        LevelData levelData = new LevelData { rows = rows, columns = columns, blocks = blocks, doors = doors, walls = walls };
+        var errors = LevelEditorGrid.GetAllValidationErrors(levelData);
+
+        if (errors.Count == 0)
+            EditorGUILayout.HelpBox("No issues found.", MessageType.Info);
+        else
+            EditorGUILayout.HelpBox(errors.Count + " issue(s):\n" + string.Join("\n", errors), MessageType.Warning);
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawMapSettingsPanel()
+    {
+        EditorGUILayout.LabelField("Map Settings", headerStyle);
+        EditorGUILayout.BeginVertical(boxStyle);
+
+        EditorGUI.BeginChangeCheck();
+        int newRows = EditorGUILayout.IntSlider("Rows", rows, 5, 20);
+        int newColumns = EditorGUILayout.IntSlider("Columns", columns, 10, 20);
+        float newTimeLimit = EditorGUILayout.FloatField("Time Limit", timeLimit);
+
+        if (EditorGUI.EndChangeCheck() && (newRows != rows || newColumns != columns || newTimeLimit != timeLimit))
+        {
+            var cmd = new ResizeMapCommand(this, newRows, newColumns, newTimeLimit);
+            commandHistory.Execute(cmd);
+            ClearSelection();
+        }
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawPropertyInspector()
+    {
+        EditorGUILayout.LabelField("Property Inspector", headerStyle);
+        EditorGUILayout.BeginVertical(boxStyle);
+
+        if (selectedBlockIndex >= 0 && selectedBlockIndex < blocks.Count)
+        {
+            BlockData block = blocks[selectedBlockIndex];
+            EditorGUI.BeginChangeCheck();
+            int typeIdx = System.Array.IndexOf(blockTypes, block.blockType);
+            typeIdx = EditorGUILayout.Popup("Type", typeIdx, blockTypes);
+            int colorIdx = System.Array.IndexOf(colors, block.color);
+            colorIdx = EditorGUILayout.Popup("Color", colorIdx, colors);
+            int row = EditorGUILayout.IntField("Row", block.row);
+            int col = EditorGUILayout.IntField("Column", block.column);
+            bool hasMine = EditorGUILayout.Toggle("Has Mine", block.hasMine);
+            int mineCount = block.hasMine ? EditorGUILayout.IntField("Mine Count", block.mineCount) : block.mineCount;
+            if (mineCount < 1 && block.hasMine) mineCount = 1;
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (typeIdx >= 0) ApplyProperty(block, "blockType", blockTypes[typeIdx]);
+                if (colorIdx >= 0) ApplyProperty(block, "color", colors[colorIdx]);
+                if (row != block.row) ApplyProperty(block, "row", row);
+                if (col != block.column) ApplyProperty(block, "column", col);
+                if (hasMine != block.hasMine) ApplyProperty(block, "hasMine", hasMine);
+                if (mineCount != block.mineCount) ApplyProperty(block, "mineCount", mineCount);
+            }
+            if (GUILayout.Button("Delete Block", GUILayout.Height(24))) DeleteSelected();
+        }
+        else if (selectedDoorIndex >= 0 && selectedDoorIndex < doors.Count)
+        {
+            DoorSpawnData door = doors[selectedDoorIndex];
+            EditorGUI.BeginChangeCheck();
+            int dirIdx = System.Array.IndexOf(directions, door.direction);
+            dirIdx = EditorGUILayout.Popup("Direction", dirIdx, directions);
+            int typeIdx = System.Array.IndexOf(doorTypes, door.doorType);
+            typeIdx = EditorGUILayout.Popup("Type", typeIdx, doorTypes);
+            int colorIdx = System.Array.IndexOf(colors, door.color);
+            colorIdx = EditorGUILayout.Popup("Color", colorIdx, colors);
+            int row = EditorGUILayout.IntField("Row", door.row);
+            int col = EditorGUILayout.IntField("Column", door.column);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (dirIdx >= 0) ApplyProperty(door, "direction", directions[dirIdx]);
+                if (typeIdx >= 0) ApplyProperty(door, "doorType", doorTypes[typeIdx]);
+                if (colorIdx >= 0) ApplyProperty(door, "color", colors[colorIdx]);
+                if (row != door.row) ApplyProperty(door, "row", row);
+                if (col != door.column) ApplyProperty(door, "column", col);
+            }
+            if (GUILayout.Button("Delete Door", GUILayout.Height(24))) DeleteSelected();
+        }
+        else if (selectedWallIndex >= 0 && selectedWallIndex < walls.Count)
+        {
+            WallSpawnData wall = walls[selectedWallIndex];
+            EditorGUI.BeginChangeCheck();
+            int dirIdx = System.Array.IndexOf(directions, wall.direction);
+            dirIdx = EditorGUILayout.Popup("Direction", dirIdx, directions);
+            int row = EditorGUILayout.IntField("Row", wall.row);
+            int col = EditorGUILayout.IntField("Column", wall.column);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (dirIdx >= 0) ApplyProperty(wall, "direction", directions[dirIdx]);
+                if (row != wall.row) ApplyProperty(wall, "row", row);
+                if (col != wall.column) ApplyProperty(wall, "column", col);
+            }
+            if (GUILayout.Button("Delete Wall", GUILayout.Height(24))) DeleteSelected();
+        }
+        else
+        {
+            EditorGUILayout.HelpBox("Select an object on the grid to edit its properties.", MessageType.Info);
+        }
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private void ApplyProperty(object target, string fieldName, object newValue)
+    {
+        var cmd = new EditPropertyCommand(target, fieldName, newValue);
+        commandHistory.Execute(cmd);
+        Repaint();
+    }
+
+    private void DrawSelectionList()
+    {
+        EditorGUILayout.LabelField("Objects", headerStyle);
+        EditorGUILayout.BeginVertical(boxStyle);
+
+        EditorGUILayout.LabelField("Blocks (" + blocks.Count + ")", EditorStyles.miniBoldLabel);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Clear Blocks", GUILayout.Height(20)))
+        {
+            if (EditorUtility.DisplayDialog("Confirm", "Clear all blocks?", "Yes", "No"))
+            {
+                blocks.Clear();
+                ClearSelection();
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.LabelField("Doors (" + doors.Count + ")", EditorStyles.miniBoldLabel);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Clear Doors", GUILayout.Height(20)))
+        {
+            if (EditorUtility.DisplayDialog("Confirm", "Clear all doors?", "Yes", "No"))
+            {
+                doors.Clear();
+                ClearSelection();
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.LabelField("Walls (" + walls.Count + ")", EditorStyles.miniBoldLabel);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Clear Walls", GUILayout.Height(20)))
+        {
+            if (EditorUtility.DisplayDialog("Confirm", "Clear all walls?", "Yes", "No"))
+            {
+                walls.Clear();
+                ClearSelection();
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawSaveLoadPanel()
+    {
+        EditorGUILayout.LabelField("Save / Load", headerStyle);
+        EditorGUILayout.BeginVertical(boxStyle);
+
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Label("Name:", GUILayout.Width(40));
+        levelName = EditorGUILayout.TextField(levelName, GUILayout.Width(120));
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save", GUILayout.Height(28))) SaveMap();
+        if (GUILayout.Button("Load", GUILayout.Height(28))) LoadMap();
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space(5);
+        if (GUILayout.Button("New Map", GUILayout.Height(28))) NewMap();
+
+        EditorGUILayout.EndVertical();
+    }
+
     private void SaveMap()
     {
         if (string.IsNullOrEmpty(levelName))
         {
-            EditorUtility.DisplayDialog("Error", "Please enter a level name", "OK");
+            EditorUtility.DisplayDialog("Error", "Please enter a level name.", "OK");
             return;
         }
-        
         LevelData levelData = new LevelData
         {
             rows = rows,
@@ -794,53 +782,50 @@ public class MapEditorWindow : EditorWindow
             doors = new List<DoorSpawnData>(doors),
             walls = new List<WallSpawnData>(walls)
         };
-        
         LevelDataWrapper wrapper = new LevelDataWrapper { level = levelData };
         string json = JsonUtility.ToJson(wrapper, true);
-        
         string levelsPath = Path.Combine(Application.streamingAssetsPath, "Levels");
-        if (!Directory.Exists(levelsPath))
-        {
-            Directory.CreateDirectory(levelsPath);
-        }
-        
+        if (!Directory.Exists(levelsPath)) Directory.CreateDirectory(levelsPath);
         string filePath = Path.Combine(levelsPath, levelName + ".json");
         File.WriteAllText(filePath, json);
-        
-        EditorUtility.DisplayDialog("Success", $"Map saved as {levelName}.json", "OK");
+        commandHistory.Clear();
+        EditorUtility.DisplayDialog("Success", "Map saved as " + levelName + ".json", "OK");
     }
-    
+
     private void LoadMap()
     {
         if (string.IsNullOrEmpty(levelName))
         {
-            EditorUtility.DisplayDialog("Error", "Please enter a level name", "OK");
+            EditorUtility.DisplayDialog("Error", "Please enter a level name.", "OK");
             return;
         }
-        
         string levelsPath = Path.Combine(Application.streamingAssetsPath, "Levels");
         string filePath = Path.Combine(levelsPath, levelName + ".json");
-        
         if (!File.Exists(filePath))
         {
-            EditorUtility.DisplayDialog("Error", $"File {levelName}.json not found", "OK");
+            EditorUtility.DisplayDialog("Error", "File " + levelName + ".json not found in Levels folder.", "OK");
             return;
         }
-        
         string json = File.ReadAllText(filePath);
         LevelDataWrapper wrapper = JsonUtility.FromJson<LevelDataWrapper>(json);
         LevelData levelData = wrapper.level;
-        
+        if (levelData == null)
+        {
+            EditorUtility.DisplayDialog("Error", "Invalid level data in file.", "OK");
+            return;
+        }
         rows = levelData.rows;
         columns = levelData.columns;
         timeLimit = levelData.timeLimit;
         blocks = new List<BlockData>(levelData.blocks);
         doors = new List<DoorSpawnData>(levelData.doors);
         walls = new List<WallSpawnData>(levelData.walls);
-        
-        EditorUtility.DisplayDialog("Success", $"Map {levelName}.json loaded", "OK");
+        commandHistory.Clear();
+        ClearSelection();
+        Repaint();
+        EditorUtility.DisplayDialog("Success", "Map " + levelName + ".json loaded.", "OK");
     }
-    
+
     private void NewMap()
     {
         if (EditorUtility.DisplayDialog("New Map", "Create a new map? Unsaved changes will be lost.", "Yes", "No"))
@@ -852,6 +837,14 @@ public class MapEditorWindow : EditorWindow
             doors.Clear();
             walls.Clear();
             levelName = "level";
+            commandHistory.Clear();
+            ClearSelection();
+            Repaint();
         }
+    }
+
+    private void StartPreview()
+    {
+        LevelEditorPreview.StartPreview(this);
     }
 }

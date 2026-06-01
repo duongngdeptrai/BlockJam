@@ -6,239 +6,38 @@
         "blocks": [
             {
                 "blockType": "block1x1",
-                "row": 3,
-                "column": 3,
-                "color": "Red"
-            },
-            {
-                "blockType": "block2x2",
-                "row": 2,
-                "column": 4,
-                "color": "Red"
-            },
-            {
-                "blockType": "blockLShape",
-                "row": 0,
-                "column": 2,
-                "color": "Purple"
-            },
-            {
-                "blockType": "block1x3",
-                "row": 3,
-                "column": 2,
-                "color": "Orange"
+                "row": 1,
+                "column": 1,
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 10
             },
             {
                 "blockType": "blockTShape",
-                "row": 4,
-                "column": 7,
-                "color": "Green"
+                "row": 1,
+                "column": 3,
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 5
             },
             {
                 "blockType": "blockZShape",
-                "row": 2,
-                "column": 6,
-                "color": "Red"
-            },
-            {
-                "blockType": "block1x4",
                 "row": 0,
-                "column": 0,
-                "color": "Green"
-            },
-            {
-                "blockType": "block1x4",
-                "row": 0,
-                "column": 9,
-                "color": "Blue"
-            },
-            {
-                "blockType": "blockLShape",
-                "row": 4,
-                "column": 12,
-                "color": "Orange"
-            },
-            {
-                "blockType": "blockLShape",
-                "row": 0,
-                "column": 10,
-                "color": "Red"
-            },
-            {
-                "blockType": "blockTShape",
-                "row": 0,
-                "column": 11,
-                "color": "Orange"
-            },
-            {
-                "blockType": "block2x2",
-                "row": 2,
-                "column": 12,
-                "color": "Green"
-            },
-            {
-                "blockType": "block2x3",
-                "row": 4,
-                "column": 10,
-                "color": "Purple"
-            },
-            {
-                "blockType": "block1x2",
-                "row": 4,
                 "column": 5,
-                "color": "Blue"
-            },
-            {
-                "blockType": "block1x4",
-                "row": 3,
-                "column": 6,
-                "color": "Yellow"
-            },
-            {
-                "blockType": "blockLShape",
-                "row": 4,
-                "column": 1,
-                "color": "Yellow"
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 2
             }
         ],
         "doors": [
             {
                 "row": -1,
-                "column": 0,
+                "column": 2,
                 "direction": "Up",
                 "doorType": "door4",
                 "color": "Red"
-            },
-            {
-                "row": -1,
-                "column": 4,
-                "direction": "Up",
-                "doorType": "door4",
-                "color": "Green"
-            },
-            {
-                "row": -1,
-                "column": 8,
-                "direction": "Up",
-                "doorType": "door4",
-                "color": "Blue"
-            },
-            {
-                "row": 7,
-                "column": 0,
-                "direction": "Down",
-                "doorType": "door4",
-                "color": "Yellow"
-            },
-            {
-                "row": 7,
-                "column": 4,
-                "direction": "Down",
-                "doorType": "door4",
-                "color": "Purple"
-            },
-            {
-                "row": 7,
-                "column": 8,
-                "direction": "Down",
-                "doorType": "door4",
-                "color": "Orange"
             }
         ],
-        "walls": [
-            {
-                "row": 0,
-                "column": 12,
-                "direction": "Up"
-            },
-            {
-                "row": 0,
-                "column": 13,
-                "direction": "Up"
-            },
-
-            {
-                "row": 6,
-                "column": 12,
-                "direction": "Down"
-            },
-            {
-                "row": 6,
-                "column": 13,
-                "direction": "Down"
-            },
-
-            {
-                "row": 0,
-                "column": 0,
-                "direction": "Left"
-            },
-            {
-                "row": 1,
-                "column": 0,
-                "direction": "Left"
-            },
-            {
-                "row": 2,
-                "column": 0,
-                "direction": "Left"
-            },
-            {
-                "row": 3,
-                "column": 0,
-                "direction": "Left"
-            },
-            {
-                "row": 4,
-                "column": 0,
-                "direction": "Left"
-            },
-            {
-                "row": 5,
-                "column": 0,
-                "direction": "Left"
-            },
-            {
-                "row": 6,
-                "column": 0,
-                "direction": "Left"
-            },
-
-            {
-                "row": 0,
-                "column": 13,
-                "direction": "Right"
-            },
-            {
-                "row": 1,
-                "column": 13,
-                "direction": "Right"
-            },
-            {
-                "row": 2,
-                "column": 13,
-                "direction": "Right"
-            },
-            {
-                "row": 3,
-                "column": 13,
-                "direction": "Right"
-            },
-            {
-                "row": 4,
-                "column": 13,
-                "direction": "Right"
-            },
-            {
-                "row": 5,
-                "column": 13,
-                "direction": "Right"
-            },
-            {
-                "row": 6,
-                "column": 13,
-                "direction": "Right"
-            }
-        ]
+        "walls": []
     }
 }
