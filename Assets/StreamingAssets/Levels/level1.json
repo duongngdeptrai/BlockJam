@@ -5,37 +5,99 @@
         "timeLimit": 120.0,
         "blocks": [
             {
-                "blockType": "block1x1",
+                "blockType": "blockLShape",
                 "row": 1,
                 "column": 1,
                 "color": "Red",
-                "hasMine": true,
-                "mineCount": 10
+                "hasMine": false,
+                "mineCount": 0
             },
             {
-                "blockType": "blockTShape",
+                "blockType": "blockLShape",
                 "row": 1,
-                "column": 3,
+                "column": 4,
                 "color": "Red",
-                "hasMine": true,
-                "mineCount": 5
+                "hasMine": false,
+                "mineCount": 0
+            },
+            {
+                "blockType": "blockLShape",
+                "row": 1,
+                "column": 7,
+                "color": "Blue",
+                "hasMine": false,
+                "mineCount": 0
             },
             {
                 "blockType": "blockZShape",
-                "row": 0,
+                "row": 1,
+                "column": 9,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 4,
+                "column": 10,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 5,
+                "column": 8,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 5,
                 "column": 5,
                 "color": "Red",
-                "hasMine": true,
-                "mineCount": 2
+                "hasMine": false,
+                "mineCount": 0
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 5,
+                "column": 2,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0
+            },
+            {
+                "blockType": "blockTShape",
+                "row": 0,
+                "column": 11,
+                "color": "Orange",
+                "hasMine": false,
+                "mineCount": 0
             }
         ],
         "doors": [
             {
-                "row": -1,
-                "column": 2,
+                "row": 0,
+                "column": 0,
                 "direction": "Up",
                 "doorType": "door4",
                 "color": "Red"
+            },
+            {
+                "row": 0,
+                "column": 5,
+                "direction": "Up",
+                "doorType": "door4",
+                "color": "Orange"
+            },
+            {
+                "row": 6,
+                "column": 4,
+                "direction": "Down",
+                "doorType": "door2",
+                "color": "Blue"
             }
         ],
         "walls": []

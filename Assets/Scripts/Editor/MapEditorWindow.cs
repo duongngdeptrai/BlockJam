@@ -779,8 +779,8 @@ public class MapEditorWindow : EditorWindow
             columns = columns,
             timeLimit = timeLimit,
             blocks = new List<BlockData>(blocks),
-            doors = new List<DoorSpawnData>(doors),
-            walls = new List<WallSpawnData>(walls)
+            doors = ConvertListForSave(doors),
+            walls = ConvertListForSave(walls)
         };
         LevelDataWrapper wrapper = new LevelDataWrapper { level = levelData };
         string json = JsonUtility.ToJson(wrapper, true);
@@ -818,8 +818,8 @@ public class MapEditorWindow : EditorWindow
         columns = levelData.columns;
         timeLimit = levelData.timeLimit;
         blocks = new List<BlockData>(levelData.blocks);
-        doors = new List<DoorSpawnData>(levelData.doors);
-        walls = new List<WallSpawnData>(levelData.walls);
+        doors = ConvertListForLoad(levelData.doors);
+        walls = ConvertListForLoad(levelData.walls);
         commandHistory.Clear();
         ClearSelection();
         Repaint();
@@ -846,5 +846,37 @@ public class MapEditorWindow : EditorWindow
     private void StartPreview()
     {
         LevelEditorPreview.StartPreview(this);
+    }
+
+    private static List<DoorSpawnData> ConvertListForSave(List<DoorSpawnData> doors)
+    {
+        var result = new List<DoorSpawnData>(doors.Count);
+        foreach (var door in doors)
+            result.Add(DoorWallCoordinateConverter.ConvertForSave(door));
+        return result;
+    }
+
+    private static List<WallSpawnData> ConvertListForSave(List<WallSpawnData> walls)
+    {
+        var result = new List<WallSpawnData>(walls.Count);
+        foreach (var wall in walls)
+            result.Add(DoorWallCoordinateConverter.ConvertForSave(wall));
+        return result;
+    }
+
+    private static List<DoorSpawnData> ConvertListForLoad(List<DoorSpawnData> doors)
+    {
+        var result = new List<DoorSpawnData>(doors.Count);
+        foreach (var door in doors)
+            result.Add(DoorWallCoordinateConverter.ConvertForLoad(door));
+        return result;
+    }
+
+    private static List<WallSpawnData> ConvertListForLoad(List<WallSpawnData> walls)
+    {
+        var result = new List<WallSpawnData>(walls.Count);
+        foreach (var wall in walls)
+            result.Add(DoorWallCoordinateConverter.ConvertForLoad(wall));
+        return result;
     }
 }
