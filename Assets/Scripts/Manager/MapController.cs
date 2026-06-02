@@ -24,6 +24,7 @@ public partial class MapController : MonoBehaviour
     private List<Wall> listWall = new List<Wall>();
     private List<Block> listBlock = new List<Block>();
     private int currentLevelIndex = 1;
+    private Transform mapRoot;
 
     private void Awake()
     {
@@ -100,10 +101,12 @@ public partial class MapController : MonoBehaviour
         rows = currentLevelData.rows;
         columns = currentLevelData.columns;
 
+        EnsureMapRoot();
         GenWalls();
         GenDoors();
         GenGrid();
         GenBlocks();
+        FitMapToScreen();
     }
 
     public void Clear()
@@ -116,6 +119,12 @@ public partial class MapController : MonoBehaviour
         if (listDoor != null) listDoor.Clear();
         if (listWall != null) listWall.Clear();
         if (listBlock != null) listBlock.Clear();
+
+        if (mapRoot != null)
+        {
+            Destroy(mapRoot.gameObject);
+            mapRoot = null;
+        }
 
         currentLevelData = null;
     }
@@ -154,6 +163,18 @@ public partial class MapController : MonoBehaviour
             Debug.Log("All blocks consumed! Level complete!");
             GameStateMachine.ToWin();
             LevelCompleted?.Invoke();
+        }
+
+        foreach (var block in listBlock)
+        {
+            if(block.GetHasMine())
+            {
+                block.SetMineCount(block.GetMineCount() - 1);
+                if(block.GetMineCount() == 0)
+                {
+                    GameStateMachine.ToLose();
+                }
+            }
         }
     }
 }

@@ -31,6 +31,16 @@ public abstract class Block : MonoBehaviour
 
     private bool isClicked = false;
 
+    public int GetMineCount()
+    {
+        return MineCount;
+    }
+
+    public bool GetHasMine()
+    {
+        return HasMine;
+    }
+
     protected virtual void OnSwapSize()
     {
         var temp = sizeX;
