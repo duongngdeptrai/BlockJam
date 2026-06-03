@@ -26,6 +26,8 @@ public partial class MapController : MonoBehaviour
     private int currentLevelIndex = 1;
     private Transform mapRoot;
 
+    public Transform MapRoot => mapRoot;
+
     private void Awake()
     {
         Debug.Log($"MapController Awake: doorPrefabs is null={doorPrefabs == null}, count={doorPrefabs?.Count ?? -1}");

@@ -7,39 +7,25 @@ public abstract class Block : MonoBehaviour
 {
     void Awake()
     {
-        // SpriteRenderer[] sprites = GetComponentsInChildren<SpriteRenderer>();
+        SpriteRenderer[] sprites = GetComponentsInChildren<SpriteRenderer>();
 
-        // foreach (var img in sprites)
-        // {
-        //     img.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
-        // }
+        foreach (var img in sprites)
+        {
+            img.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+        }
     }
     [SerializeField] protected SpriteRenderer[] Img;
     [SerializeField] protected int sizeX = 1, sizeY = 1;
     [SerializeField] protected Transform MineContainer;
     [SerializeField] protected TextMeshPro mineCountText;
+    [SerializeField] protected Transform SecondColorContainer;
+    [SerializeField] protected SpriteRenderer[] SecondColorSprites;
 
     public ColorType colorType; // Lưu giữ data màu thật 
 
     public int SizeX { get => sizeX; }
     public int SizeY { get => sizeY; }
     public ColorType ColorType { get => colorType; }
-
-    private bool HasMine;
-
-    private int MineCount;
-
-    private bool isClicked = false;
-
-    public int GetMineCount()
-    {
-        return MineCount;
-    }
-
-    public bool GetHasMine()
-    {
-        return HasMine;
-    }
 
     protected virtual void OnSwapSize()
     {
@@ -60,6 +46,20 @@ public abstract class Block : MonoBehaviour
         }
     }
 
+     private bool HasMine;
+
+    private int MineCount;
+
+    public int GetMineCount()
+    {
+        return MineCount;
+    }
+
+    public bool GetHasMine()
+    {
+        return HasMine;
+    }
+
     public void SetHasMine(bool hasMine)
     {
         HasMine = hasMine;
@@ -70,5 +70,34 @@ public abstract class Block : MonoBehaviour
     {
         MineCount = mineCount;
         mineCountText.text = mineCount.ToString();
+    }
+
+    private bool HasSecondColor;
+
+    private ColorType SecondColorType;
+
+    public bool GetHasSecondColor()
+    {
+        return HasSecondColor;
+    }
+
+    public ColorType GetSecondColorType()
+    {
+        return SecondColorType;
+    }
+
+    public void SetHasSecondColor(bool hasSecondColor)
+    {
+        HasSecondColor = hasSecondColor;
+        SecondColorContainer.gameObject.SetActive(hasSecondColor);
+    }
+
+    public void SetSecondColorType(ColorType secondColorType)
+    {
+        SecondColorType = secondColorType;
+        foreach (var spriteRenderer in SecondColorSprites)
+        {
+            spriteRenderer.color = ColorManager.GetColor(secondColorType);
+        }
     }
 }

@@ -11,6 +11,8 @@ public int column;
 public string color;
 public bool hasMine;
 public int mineCount;
+public bool hasSecondColor;
+public string secondColor;
 }
 
 [System.Serializable]

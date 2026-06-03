@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class GamePlayManager : Singleton<GamePlayManager>
 {
-    [SerializeField] private MapController mapController;
-    [SerializeField] private GamePlayUI gamePlayUI;
+    [SerializeField] public MapController mapController;
+    [SerializeField] public GamePlayUI gamePlayUI;
 
     private int currentLevel = 1;
 

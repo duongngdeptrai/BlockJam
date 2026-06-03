@@ -181,8 +181,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1462dd3c141a014409492e54ec896cab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boxCollider: {fileID: 1708345584720057955}
   block: {fileID: 0}
+  closeDoor: 0
+  raycastOrigins: []
+  raycastDistance: 20
+  dragObstacleMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  dragSkinWidth: 0.02
+  dragCastBoxColliders: []
 --- !u!50 &6620692174634049082
 Rigidbody2D:
   serializedVersion: 5
@@ -237,8 +244,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.0025, y: 1.0025, z: 1.0025}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 4028973940594057358}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
