@@ -55,36 +55,6 @@
                 "secondColor": ""
             },
             {
-                "blockType": "blockZShape",
-                "row": 5,
-                "column": 8,
-                "color": "Red",
-                "hasMine": false,
-                "mineCount": 0,
-                "hasSecondColor": false,
-                "secondColor": ""
-            },
-            {
-                "blockType": "blockZShape",
-                "row": 5,
-                "column": 5,
-                "color": "Red",
-                "hasMine": false,
-                "mineCount": 0,
-                "hasSecondColor": false,
-                "secondColor": ""
-            },
-            {
-                "blockType": "blockZShape",
-                "row": 5,
-                "column": 2,
-                "color": "Red",
-                "hasMine": false,
-                "mineCount": 0,
-                "hasSecondColor": false,
-                "secondColor": ""
-            },
-            {
                 "blockType": "blockTShape",
                 "row": 0,
                 "column": 11,
@@ -122,7 +92,27 @@
                 "hasMine": false,
                 "mineCount": 0,
                 "hasSecondColor": true,
-                "secondColor": "Yellow"
+                "secondColor": "None"
+            },
+            {
+                "blockType": "block1x1",
+                "row": 5,
+                "column": 2,
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 5,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "block2x2",
+                "row": 5,
+                "column": 6,
+                "color": "Blue",
+                "hasMine": true,
+                "mineCount": 1,
+                "hasSecondColor": false,
+                "secondColor": ""
             }
         ],
         "doors": [

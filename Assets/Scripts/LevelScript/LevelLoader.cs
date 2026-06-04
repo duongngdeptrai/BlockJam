@@ -9,7 +9,6 @@ public static class LevelLoader
     public static LevelData LoadLevel(string jsonFileName)
     {
         string path = Path.Combine(Application.streamingAssetsPath, jsonFileName);
-
 #if UNITY_ANDROID && !UNITY_EDITOR
         string json = ReadFromStreamingAssetsAndroid(path, out bool fileFound);
         if (!fileFound || string.IsNullOrEmpty(json))
@@ -81,7 +80,6 @@ public static class LevelLoader
         uwr.Dispose();
         return text;
     }
-
     private static void ValidateLevelData(LevelData level)
     {
         if (level == null) return;
@@ -184,6 +182,9 @@ public static class LevelLoader
 
     private static bool IsValidDirection(string direction)
     {
-        return direction == "Up" || direction == "Down" || direction == "Left" || direction == "Right";
+        return direction == "Up"
+            || direction == "Down"
+            || direction == "Left"
+            || direction == "Right";
     }
 }
