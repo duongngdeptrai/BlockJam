@@ -61,10 +61,19 @@ public class GamePlayManager : Singleton<GamePlayManager>
     private int GetMaxAvailableLevel()
     {
         int level = 1;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        while (true)
+        {
+            string path = Path.Combine(Application.streamingAssetsPath, "Levels", $"level{level + 1}.json");
+            if (!LevelLoader.FileExistsOnAndroid(path)) break;
+            level++;
+        }
+#else
         while (File.Exists(Path.Combine(Application.streamingAssetsPath, "Levels", $"level{level + 1}.json")))
         {
             level++;
         }
+#endif
         return level;
     }
 
