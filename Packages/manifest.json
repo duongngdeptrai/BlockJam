@@ -1,14 +1,6 @@
 {
-  "scopedRegistries": [
-    {
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.lazyjoker.litmotion"
-      ]
-    }
-  ],
   "dependencies": {
+    "com.annulusgames.lit-motion": "https://github.com/annulusgames/LitMotion.git?path=src/LitMotion/Assets/LitMotion",
     "com.unity.2d.animation": "11.0.0",
     "com.unity.2d.aseprite": "1.2.5",
     "com.unity.2d.psdimporter": "10.1.1",
@@ -57,7 +49,6 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "com.lazyjoker.litmotion": "1.5.2"
+    "com.unity.modules.xr": "1.0.0"
   }
 }
