@@ -706,6 +706,7 @@ public class BlockMove : MonoBehaviour
                 blockBounds.min.x <= doorBounds.max.x - doorEnterDepth) return true;
                 break;
         }
+
         return false;
     }
     bool CheckDestroy()
@@ -731,6 +732,7 @@ public class BlockMove : MonoBehaviour
                 if (blockBounds.min.x <= exitThreshold) return true;
                 break;
         }
+
         return false;
     }
     private Vector3 GetDirectionVector(Direction dir)
@@ -845,6 +847,19 @@ public class BlockMove : MonoBehaviour
         {
             blockBounds = exitBounds; // Cập nhật bounds thực tế
         }
+
+        if (block.GetHasSecondColor())
+        {
+            currentDoor.PlayParticles(blockBounds);
+            closeDoor = false;
+            if (doorCollider != null) doorCollider.isTrigger = false;
+            doorCollider = null;
+            currentDoor = null;
+            block.SetHasSecondColor(false);
+            block.SetColorBlock(block.GetSecondColorType());
+            return;
+        }
+
         currentDoor.PlayParticles(blockBounds);
 
         closeDoor = false; // Ngừng CheckDoorEnterDepth

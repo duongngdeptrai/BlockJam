@@ -37,7 +37,6 @@ public abstract class Block : MonoBehaviour
 
     public void SetColorBlock(ColorType colorType)
     {
-        // Nhận màu từ JSON (do GenBlocks() truyền xuống) và ghi nhớ vào block!
         this.colorType = colorType; 
 
         foreach (var spriteRenderer in Img)
@@ -89,15 +88,19 @@ public abstract class Block : MonoBehaviour
     public void SetHasSecondColor(bool hasSecondColor)
     {
         HasSecondColor = hasSecondColor;
-        SecondColorContainer.gameObject.SetActive(hasSecondColor);
+        if (SecondColorContainer != null)
+            SecondColorContainer.gameObject.SetActive(hasSecondColor);
     }
 
     public void SetSecondColorType(ColorType secondColorType)
     {
         SecondColorType = secondColorType;
-        foreach (var spriteRenderer in SecondColorSprites)
+        if (SecondColorSprites != null)
         {
-            spriteRenderer.color = ColorManager.GetColor(secondColorType);
+            foreach (var spriteRenderer in SecondColorSprites)
+            {
+                spriteRenderer.color = ColorManager.GetColor(secondColorType);
+            }
         }
     }
 }
