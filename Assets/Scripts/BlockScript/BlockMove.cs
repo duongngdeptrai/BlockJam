@@ -856,8 +856,10 @@ public class BlockMove : MonoBehaviour
     }
 
     private void ExecuteAutoExit(Vector3 exitDir)
-    {
+    {   
         if (currentDoor == null) return;
+
+        SFXManager.Instance.Play(AudioKeys.EatBlock, false, 0.75f);
 
         if (TryGetBlockBounds(out Bounds exitBounds, includeDisabled: true))
         {

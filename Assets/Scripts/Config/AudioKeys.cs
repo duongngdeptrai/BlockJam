@@ -5,4 +5,5 @@ public static class AudioKeys
     public const string MusicPlay = "music_play";
     public const string WinGame = "win_game";
     public const string LoseGame = "lose_game";
+    public const string EatBlock = "eat_block";
 }

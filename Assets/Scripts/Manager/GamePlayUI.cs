@@ -7,7 +7,9 @@ public class GamePlayUI : MonoBehaviour
     [SerializeField] private Button resetButton;
     [SerializeField] private Button homeButton;
     [SerializeField] private TextMeshProUGUI timeText;
+    [SerializeField] private Image timeFillImage;
     private float timeRemaining;
+    private float maxTime;
 
     private void Awake()
     {
@@ -60,6 +62,7 @@ public class GamePlayUI : MonoBehaviour
 
     public void StartTimer(float timeLimit)
     {
+        maxTime = timeLimit;
         timeRemaining = Mathf.Max(0f, timeLimit);
         UpdateTimeDisplay();
     }
@@ -72,6 +75,10 @@ public class GamePlayUI : MonoBehaviour
             return;
         }
         timeText.text = $"Time: {timeRemaining:F0}s";
+        if (timeFillImage != null)        
+        {
+            timeFillImage.fillAmount = timeRemaining / maxTime;
+        }
     }
 
     private void OnResetButtonClicked()
