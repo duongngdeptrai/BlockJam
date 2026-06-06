@@ -179,6 +179,9 @@ public partial class MapController : MonoBehaviour
             }
         }
     }
+
+    public int Rows => rows;
+    public int Columns => columns;
 }
 
 [System.Serializable]

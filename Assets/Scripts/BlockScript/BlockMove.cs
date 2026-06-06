@@ -92,8 +92,16 @@ public class BlockMove : MonoBehaviour
         Vector3 position = transform.position;
         Transform mapRoot = GamePlayManager.Instance.mapController.MapRoot;
         Vector3 localPos = mapRoot.worldToLocalMatrix.MultiplyPoint(position);
-        localPos.x = Mathf.Round(localPos.x - 0.5f) + 0.5f;
-        localPos.y = Mathf.Round(localPos.y);
+        // localPos.x = Mathf.Round(localPos.x - 0.5f) + 0.5f;
+        // localPos.y = Mathf.Round(localPos.y);
+        int rows = GamePlayManager.Instance.mapController.Rows;
+        int columns = GamePlayManager.Instance.mapController.Columns;
+        localPos.y = (rows % 2 == 0)
+            ? Mathf.Round(localPos.y - 0.5f) + 0.5f
+            : Mathf.Round(localPos.y);
+        localPos.x = (columns % 2 == 0)
+            ? Mathf.Round(localPos.x - 0.5f) + 0.5f
+            : Mathf.Round(localPos.x);
         position = mapRoot.localToWorldMatrix.MultiplyPoint(localPos);
         rb.position = position;
         transform.position = position;
@@ -451,8 +459,16 @@ public class BlockMove : MonoBehaviour
         Vector3 position = transform.position;
         Transform mapRoot = GamePlayManager.Instance.mapController.MapRoot;
         Vector3 localPos = mapRoot.worldToLocalMatrix.MultiplyPoint(position);
-        localPos.x = Mathf.Round(localPos.x - 0.5f) + 0.5f;
-        localPos.y = Mathf.Round(localPos.y);
+        // localPos.x = Mathf.Round(localPos.x - 0.5f) + 0.5f;
+        // localPos.y = Mathf.Round(localPos.y);
+        int rows = GamePlayManager.Instance.mapController.Rows;
+        int columns = GamePlayManager.Instance.mapController.Columns;
+        localPos.y = (rows % 2 == 0)
+            ? Mathf.Round(localPos.y - 0.5f) + 0.5f
+            : Mathf.Round(localPos.y);
+        localPos.x = (columns % 2 == 0)
+            ? Mathf.Round(localPos.x - 0.5f) + 0.5f
+            : Mathf.Round(localPos.x);
         position = mapRoot.localToWorldMatrix.MultiplyPoint(localPos);
         rb.position = position;
         transform.position = position; // Ép tọa độ ghim lập tức để Bounds không bị lag 1 frame
