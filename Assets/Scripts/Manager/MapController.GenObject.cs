@@ -145,7 +145,10 @@ public partial class MapController : MonoBehaviour
                 -(blockData.row - (rows - 1) / 2f),
                 0);
 
-            ColorType colorType = GetColorTypeFromString(blockData.color);
+            Quaternion rotation = DirectionToRotation(blockData.direction);
+block.transform.localRotation = rotation;
+
+ColorType colorType = GetColorTypeFromString(blockData.color);
             block.SetColorBlock(colorType);
             block.SetHasMine(blockData.hasMine);
 

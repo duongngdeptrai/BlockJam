@@ -13,6 +13,7 @@ public bool hasMine;
 public int mineCount;
 public bool hasSecondColor;
 public string secondColor;
+public string direction; // "Up", "Down", "Left", "Right" — default "Up"
 }
 
 [System.Serializable]
