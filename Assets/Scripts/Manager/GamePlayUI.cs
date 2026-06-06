@@ -74,7 +74,7 @@ public class GamePlayUI : MonoBehaviour
             Debug.LogError("GamePlayUI: timeText is null! Assign TextMeshProUGUI in Inspector.");
             return;
         }
-        timeText.text = $"Time: {timeRemaining:F0}s";
+        timeText.text = $"{timeRemaining:F0}s";
         if (timeFillImage != null)        
         {
             timeFillImage.fillAmount = timeRemaining / maxTime;
