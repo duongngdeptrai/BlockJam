@@ -31,6 +31,18 @@ public partial class MapController : MonoBehaviour
         };
     }
 
+    private Quaternion BlockDirectionToRotation(string direction)
+    {
+        return direction switch
+        {
+            "Down" => Quaternion.Euler(0, 0, 180),
+            "Up" => Quaternion.Euler(0, 0, 0),
+            "Left" => Quaternion.Euler(0, 0, 270),
+            "Right" => Quaternion.Euler(0, 0, 90),
+            _ => Quaternion.Euler(0, 0, 0)
+        };
+    }
+
     private ColorType GetColorTypeFromString(string colorStr)
     {
         if (Enum.TryParse<ColorType>(colorStr, true, out var result))
@@ -145,7 +157,7 @@ public partial class MapController : MonoBehaviour
                 -(blockData.row - (rows - 1) / 2f),
                 0);
 
-            Quaternion rotation = DirectionToRotation(blockData.direction);
+            Quaternion rotation = BlockDirectionToRotation(blockData.direction);
 block.transform.localRotation = rotation;
 
 ColorType colorType = GetColorTypeFromString(blockData.color);

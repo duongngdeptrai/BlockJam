@@ -67,6 +67,18 @@ public class GamePlayUI : MonoBehaviour
         UpdateTimeDisplay();
     }
 
+    public void AddTime(float seconds)
+    {
+        timeRemaining = Mathf.Min(timeRemaining + seconds, maxTime);
+        UpdateTimeDisplay();
+    }
+
+    public void SubtractTime(float seconds)
+    {
+        timeRemaining = Mathf.Max(timeRemaining - seconds, 0f);
+        UpdateTimeDisplay();
+    }
+
     private void UpdateTimeDisplay()
     {
         if (timeText == null)

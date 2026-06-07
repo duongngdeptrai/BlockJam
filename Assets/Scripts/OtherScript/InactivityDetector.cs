@@ -1,12 +1,15 @@
 using System;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
+using TMPro;
 
 public class InactivityDetector : MonoBehaviour
 {
     [SerializeField] private float inactiveTime = 5f;
-    [SerializeField] private GameObject warningObject;
+    [SerializeField] private Image warningObject;
     [SerializeField] private float warningDuration = 2f;
+    [SerializeField] private TextMeshProUGUI warningText;
 
     private float lastInteractionTime;
     private bool hasTriggered;
@@ -16,32 +19,26 @@ public class InactivityDetector : MonoBehaviour
     {
         lastInteractionTime = Time.time;
         hasTriggered = false;
-
-        if (warningObject != null)
-            warningObject.SetActive(false);
-
+        if (warningObject != null) warningObject.gameObject.SetActive(false);
+        if (warningText != null) warningText.gameObject.SetActive(false);
         GameStateMachine.StateChanged += OnStateChanged;
     }
 
     private void Update()
     {
-        if (!GameStateMachine.Is(GameState.Playing))
-            return;
+        if (!GameStateMachine.Is(GameState.Playing)) return;
 
         if (Input.GetMouseButtonDown(0) || Input.touchCount > 0)
         {
             lastInteractionTime = Time.time;
-
-            if (hasTriggered)
-            {
-                hasTriggered = false;
-                StopWarning();
-            }
+            hasTriggered = false;
+            StopWarning();
         }
 
         if (!hasTriggered && Time.time - lastInteractionTime >= inactiveTime)
         {
             hasTriggered = true;
+            lastInteractionTime = Time.time;
             StartWarning();
         }
     }
@@ -56,17 +53,18 @@ public class InactivityDetector : MonoBehaviour
     private void StartWarning()
     {
         Debug.Log($"Player inactive for {inactiveTime} seconds");
-
-        if (warningObject == null)
-            return;
-
-        warningObject.SetActive(true);
-
+        if (GamePlayManager.Instance != null && GamePlayManager.Instance.gamePlayUI != null)
+        {
+            GamePlayManager.Instance.gamePlayUI.SubtractTime(inactiveTime);
+        }
+        if (warningObject == null) return;
+        warningObject.gameObject.SetActive(true);
+        warningText.gameObject.SetActive(true);
 #if UNITY_ANDROID && !UNITY_EDITOR
         Handheld.Vibrate();
 #endif
-
         warningCoroutine = StartCoroutine(AnimateWarning());
+        StartCoroutine(FadeAndPopText());
     }
 
     private void StopWarning()
@@ -76,45 +74,93 @@ public class InactivityDetector : MonoBehaviour
             StopCoroutine(warningCoroutine);
             warningCoroutine = null;
         }
-
-        if (warningObject != null)
-            warningObject.SetActive(false);
+        if (warningObject != null) warningObject.gameObject.SetActive(false);
+        if (warningText != null) warningText.gameObject.SetActive(false);
     }
 
     private IEnumerator AnimateWarning()
     {
-        warningObject.transform.localScale = Vector3.zero;
-        var canvasGroup = warningObject.GetComponent<CanvasGroup>();
-        if (canvasGroup != null) canvasGroup.alpha = 0f;
+        Image image = warningObject;
+        if (image == null) yield break;
 
-        float elapsed = 0f;
-        float popInDuration = 0.2f;
-        while (elapsed < popInDuration)
+        Color color = image.color;
+        float minAlpha = 0f;
+        float maxAlpha = 100f / 255f; // ~0.392
+        float fadeDuration = 0.3f;
+
+        for (int i = 0; i <= 2; i++)
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / popInDuration);
-            float ease = 1f + 2.70158f * Mathf.Pow(t - 1f, 3f) + 1.70158f * Mathf.Pow(t - 1f, 2f);
-            warningObject.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, ease);
-            if (canvasGroup != null) canvasGroup.alpha = t;
-            yield return null;
+            // Fade in: 0 -> 100/255
+            float elapsed = 0f;
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / fadeDuration);
+                color.a = Mathf.Lerp(minAlpha, maxAlpha, t);
+                image.color = color;
+                yield return null;
+            }
+
+            // Fade out: 100/255 -> 0
+            elapsed = 0f;
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / fadeDuration);
+                color.a = Mathf.Lerp(maxAlpha, minAlpha, t);
+                image.color = color;
+                yield return null;
+            }
         }
-        warningObject.transform.localScale = Vector3.one;
-        if (canvasGroup != null) canvasGroup.alpha = 1f;
 
-        yield return new WaitForSeconds(warningDuration);
-
-        elapsed = 0f;
-        float fadeOutDuration = 0.3f;
-        while (elapsed < fadeOutDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / fadeOutDuration);
-            warningObject.transform.localScale = Vector3.Lerp(Vector3.one, Vector3.zero, t);
-            if (canvasGroup != null) canvasGroup.alpha = 1f - t;
-            yield return null;
-        }
-
+        hasTriggered = false;
         StopWarning();
+    }
+
+    private IEnumerator FadeAndPopText()
+    {
+        if (warningText == null) yield break;
+
+        // Trạng thái ban đầu
+        Color color = warningText.color;
+        color.a = 0f;
+        warningText.color = color;
+
+        RectTransform rect = warningText.rectTransform;
+        rect.localScale = Vector3.one * 0.5f;
+
+        float duration = 0.4f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            // Alpha: 0 -> 1
+            color.a = t;
+            warningText.color = color;
+
+            // Scale: 0.5 -> 1.2 -> 0
+            float scale;
+            if (t < 0.7f)
+            {
+                // 0.5 -> 1.2
+                scale = Mathf.Lerp(0.5f, 1.2f, t / 0.7f);
+            }
+            else
+            {
+                // 1.2 -> 0
+                scale = Mathf.Lerp(1.2f, 0f, (t - 0.7f) / 0.3f);
+            }
+            rect.localScale = Vector3.one * scale;
+
+            yield return null;
+        }
+
+        // Đảm bảo giá trị cuối chính xác
+        color.a = 1f;
+        warningText.color = color;
+        rect.localScale = Vector3.one;
     }
 
     private void OnDestroy()

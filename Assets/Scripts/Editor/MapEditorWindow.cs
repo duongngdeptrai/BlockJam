@@ -44,7 +44,7 @@ private Vector2 scrollPos;
 private bool showPreview = true;
 private string levelName = "level";
 
-private string[] blockTypes = { "block1x1", "block1x2", "block1x3", "block1x4", "block2x2", "block2x3", "blockLShape", "blockTShape", "blockZShape" };
+private string[] blockTypes = { "block1x1", "block1x2", "block1x3", "block1x4", "block2x2", "block2x3", "blockLShape", "blockTShape", "blockZShape", "blockVShape" };
 private string[] colors = { "Red", "Green", "Blue", "Yellow", "Purple", "Orange", "None" };
 private string[] directions = { "Up", "Down", "Left", "Right" };
 private string[] doorTypes = { "door1", "door2", "door3", "door4" };

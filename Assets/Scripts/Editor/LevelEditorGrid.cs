@@ -17,8 +17,9 @@ private static readonly Dictionary<string, List<Vector2Int>> Footprints = new Di
 { "block2x2", new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) } },
 { "block2x3", new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(0, 2), new Vector2Int(1, 2) } },
 { "blockLShape", new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(1, 2) } },
-{ "blockTShape", new List<Vector2Int> { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1) } },
+{ "blockTShape", new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, 1), new Vector2Int(1, 2) } },
 { "blockZShape", new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(2, 1) } },
+{ "blockVShape", new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1) } },
 };
 
 public static Vector2Int ScreenToGrid(Vector2 screenPos, Rect gridOrigin)
@@ -67,42 +68,34 @@ return RotateFootprint(baseFootprint, direction);
 
 private static List<Vector2Int> RotateFootprint(List<Vector2Int> footprint, string direction)
 {
-var rotated = new List<Vector2Int>(footprint.Count);
-foreach (var offset in footprint)
+var result = new List<Vector2Int>(footprint.Count);
+Vector2Int anchor = footprint[0];
+for (int i = 0; i < footprint.Count; i++)
 {
-int nx = offset.x;
-int ny = offset.y;
+Vector2Int rel = footprint[i] - anchor;
+int nx, ny;
 switch (direction)
 {
 case "Right":
-nx = offset.y;
-ny = -offset.x;
+nx = rel.y;
+ny = -rel.x;
 break;
 case "Down":
-nx = -offset.x;
-ny = -offset.y;
+nx = -rel.x;
+ny = -rel.y;
 break;
 case "Left":
-nx = -offset.y;
-ny = offset.x;
+nx = -rel.y;
+ny = rel.x;
+break;
+default:
+nx = rel.x;
+ny = rel.y;
 break;
 }
-rotated.Add(new Vector2Int(nx, ny));
+result.Add(new Vector2Int(nx, ny));
 }
-
-int minX = int.MaxValue;
-int minY = int.MaxValue;
-foreach (var o in rotated)
-{
-if (o.x < minX) minX = o.x;
-if (o.y < minY) minY = o.y;
-}
-
-var normalized = new List<Vector2Int>(rotated.Count);
-foreach (var o in rotated)
-normalized.Add(new Vector2Int(o.x - minX, o.y - minY));
-
-return normalized;
+return result;
 }
 
 public static List<Vector2Int> GetDoorFootprint(DoorSpawnData door)
@@ -146,8 +139,9 @@ return blockType switch
 "block2x2" => new Vector2Int(2, 2),
 "block2x3" => new Vector2Int(2, 3),
 "blockLShape" => new Vector2Int(2, 3),
-"blockTShape" => new Vector2Int(3, 2),
+"blockTShape" => new Vector2Int(3, 3),
 "blockZShape" => new Vector2Int(3, 2),
+"blockVShape" => new Vector2Int(2, 2),
 _ => new Vector2Int(1, 1),
 };
 }
@@ -265,7 +259,7 @@ return true;
 }
 foreach (var other in walls)
 {
-if (other.row == wall.row && other.column == wall.column)
+if (wall.row == other.row && wall.column == other.column)
 return true;
 }
 return false;
@@ -336,8 +330,7 @@ foreach (var oA in footA)
 {
 foreach (var oB in footB)
 {
-if (door.row + oA.y == other.row + oB.y && door.column + oA.x == other.column + oB.x)
-{ hit = true; break; }
+if (door.row + oA.y == other.row + oB.y && door.column + oA.x == other.column + oB.x) { hit = true; break; }
 }
 if (hit) break;
 }
@@ -353,8 +346,7 @@ foreach (var wall in level.walls)
 bool wallHit = false;
 foreach (var dOff in wallFootprint)
 {
-if (door.row + dOff.y == wall.row && door.column + dOff.x == wall.column)
-{ wallHit = true; break; }
+if (door.row + dOff.y == wall.row && door.column + dOff.x == wall.column) { wallHit = true; break; }
 }
 if (wallHit)
 {
