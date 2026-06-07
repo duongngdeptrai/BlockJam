@@ -16,6 +16,7 @@ public class ResizeMapCommand : IEditorCommand
     private readonly List<BlockData> removedBlocks = new List<BlockData>();
     private readonly List<DoorSpawnData> removedDoors = new List<DoorSpawnData>();
     private readonly List<WallSpawnData> removedWalls = new List<WallSpawnData>();
+    private readonly List<TrashBlockSpawnData> removedTrashBlocks = new List<TrashBlockSpawnData>();
 
     public ResizeMapCommand(MapEditorWindow window, int newRows, int newColumns, float newTimeLimit)
     {
@@ -27,7 +28,6 @@ public class ResizeMapCommand : IEditorCommand
         this.newColumns = newColumns;
         this.newTimeLimit = newTimeLimit;
 
-        // Backup objects that will be removed
         foreach (var b in window.Blocks)
         {
             if (b.row >= newRows || b.column >= newColumns)
@@ -43,6 +43,11 @@ public class ResizeMapCommand : IEditorCommand
             if (w.row >= newRows || w.column >= newColumns)
                 removedWalls.Add(JsonUtility.FromJson<WallSpawnData>(JsonUtility.ToJson(w)));
         }
+        foreach (var t in window.TrashBlocks)
+        {
+            if (t.row >= newRows || t.column >= newColumns)
+                removedTrashBlocks.Add(JsonUtility.FromJson<TrashBlockSpawnData>(JsonUtility.ToJson(t)));
+        }
     }
 
     public void Execute()
@@ -50,11 +55,10 @@ public class ResizeMapCommand : IEditorCommand
         window.SetRows(newRows);
         window.SetColumns(newColumns);
         window.SetTimeLimit(newTimeLimit);
-
-        // Remove out-of-bounds objects
         window.Blocks.RemoveAll(b => b.row >= newRows || b.column >= newColumns);
         window.Doors.RemoveAll(d => d.row >= newRows || d.column >= newColumns);
         window.Walls.RemoveAll(w => w.row >= newRows || w.column >= newColumns);
+        window.TrashBlocks.RemoveAll(t => t.row >= newRows || t.column >= newColumns);
     }
 
     public void Undo()
@@ -62,13 +66,9 @@ public class ResizeMapCommand : IEditorCommand
         window.SetRows(oldRows);
         window.SetColumns(oldColumns);
         window.SetTimeLimit(oldTimeLimit);
-
-        // Restore removed objects
-        foreach (var b in removedBlocks)
-            window.Blocks.Add(b);
-        foreach (var d in removedDoors)
-            window.Doors.Add(d);
-        foreach (var w in removedWalls)
-            window.Walls.Add(w);
+        foreach (var b in removedBlocks) window.Blocks.Add(b);
+        foreach (var d in removedDoors) window.Doors.Add(d);
+        foreach (var w in removedWalls) window.Walls.Add(w);
+        foreach (var t in removedTrashBlocks) window.TrashBlocks.Add(t);
     }
 }

@@ -11,18 +11,22 @@ public partial class MapController : MonoBehaviour
     [SerializeField] private List<DoorPrefabEntry> doorPrefabs;
     [SerializeField] private Wall wallPrefab;
     [SerializeField] private List<BlockPrefabEntry> blockPrefabs;
+    [SerializeField] private List<TrashBlockPrefabEntry> trashBlockPrefabs;
     [SerializeField] private GameObject Grid;
     [SerializeField] private string levelJsonFileName = "Levels/level1.json";
     [SerializeField] private Transform blockContainer;
     [SerializeField] private Transform doorContainer;
     [SerializeField] private Transform wallContainer;
+    [SerializeField] private Transform trashBlockContainer;
     [SerializeField] private Transform gridContainer;
     private Dictionary<string, Door> doorPrefabDict = new Dictionary<string, Door>();
     private Dictionary<string, Block> blockPrefabDict = new Dictionary<string, Block>();
+    private Dictionary<string, TrashBlock> trashBlockPrefabDict = new Dictionary<string, TrashBlock>();
     private LevelData currentLevelData;
     private List<Door> listDoor = new List<Door>();
     private List<Wall> listWall = new List<Wall>();
     private List<Block> listBlock = new List<Block>();
+    private List<TrashBlock> listTrashBlock = new List<TrashBlock>();
     private int currentLevelIndex = 1;
     private Transform mapRoot;
 
@@ -74,6 +78,26 @@ public partial class MapController : MonoBehaviour
             }
             Debug.Log($"MapController: blockPrefabDict loaded {blockPrefabDict.Count} entries. Keys: [{string.Join(", ", blockPrefabDict.Keys)}]");
         }
+
+        if (trashBlockPrefabs == null)
+        {
+            Debug.LogError("MapController: trashBlockPrefabs list is NULL in Awake(). Assign prefabs in Inspector.");
+        }
+        else if (trashBlockPrefabs.Count == 0)
+        {
+            Debug.LogError("MapController: trashBlockPrefabs list is EMPTY in Awake(). Add entries in Inspector.");
+        }
+        else
+        {
+            foreach (var entry in trashBlockPrefabs)
+            {
+                if (entry != null && entry.prefab != null && !string.IsNullOrEmpty(entry.key))
+                {
+                    trashBlockPrefabDict[entry.key] = entry.prefab;
+                }
+            }
+            Debug.Log($"MapController: trashBlockPrefabDict loaded {trashBlockPrefabDict.Count} entries. Keys: [{string.Join(", ", trashBlockPrefabDict.Keys)}]");
+        }
     }
 
     private void OnEnable()
@@ -107,6 +131,7 @@ public partial class MapController : MonoBehaviour
         GenWalls();
         GenDoors();
         GenGrid();
+        GenTrashBlocks();
         GenBlocks();
         FitMapToScreen();
     }
@@ -117,10 +142,12 @@ public partial class MapController : MonoBehaviour
         ClearContainer(doorContainer);
         ClearContainer(gridContainer);
         ClearContainer(blockContainer);
+        ClearContainer(trashBlockContainer);
 
         if (listDoor != null) listDoor.Clear();
         if (listWall != null) listWall.Clear();
         if (listBlock != null) listBlock.Clear();
+        if (listTrashBlock != null) listTrashBlock.Clear();
 
         if (mapRoot != null)
         {
@@ -196,4 +223,11 @@ public class BlockPrefabEntry
 {
     public string key;
     public Block prefab;
+}
+
+[System.Serializable]
+public class TrashBlockPrefabEntry
+{
+    public string key;
+    public TrashBlock prefab;
 }

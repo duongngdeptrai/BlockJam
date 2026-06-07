@@ -97,11 +97,11 @@ public class BlockMove : MonoBehaviour
         int rows = GamePlayManager.Instance.mapController.Rows;
         int columns = GamePlayManager.Instance.mapController.Columns;
         localPos.y = (rows % 2 == 0)
-        ? Mathf.Round(localPos.y - 0.5f) + 0.5f
-        : Mathf.Round(localPos.y);
+            ? Mathf.Round(localPos.y - 0.5f) + 0.5f
+            : Mathf.Round(localPos.y);
         localPos.x = (columns % 2 == 0)
-        ? Mathf.Round(localPos.x - 0.5f) + 0.5f
-        : Mathf.Round(localPos.x);
+            ? Mathf.Round(localPos.x - 0.5f) + 0.5f
+            : Mathf.Round(localPos.x);
         position = mapRoot.localToWorldMatrix.MultiplyPoint(localPos);
         rb.position = position;
         transform.position = position;
@@ -196,6 +196,7 @@ public class BlockMove : MonoBehaviour
     private void OnMouseDrag()
     {
         if (IsAutoExiting || !isDragging) return;
+
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
 
@@ -363,16 +364,7 @@ public class BlockMove : MonoBehaviour
                     {
                         nearestBlockingDistance = hit.distance;
                     }
-                    continue;
-                }
 
-                TrashBlock hitTrash = hitCollider.GetComponentInParent<TrashBlock>();
-                if (hitTrash != null)
-                {
-                    if (hit.distance < nearestBlockingDistance)
-                    {
-                        nearestBlockingDistance = hit.distance;
-                    }
                     continue;
                 }
             }
@@ -403,8 +395,6 @@ public class BlockMove : MonoBehaviour
     {
         if (door == null) return false;
         if (block.ColorType != door.ColorType) return false;
-
-        return true;
 
         int actualDoorSize = door.Size <= 0 ? 1 : door.Size;
 
@@ -474,14 +464,15 @@ public class BlockMove : MonoBehaviour
         int rows = GamePlayManager.Instance.mapController.Rows;
         int columns = GamePlayManager.Instance.mapController.Columns;
         localPos.y = (rows % 2 == 0)
-        ? Mathf.Round(localPos.y - 0.5f) + 0.5f
-        : Mathf.Round(localPos.y);
+            ? Mathf.Round(localPos.y - 0.5f) + 0.5f
+            : Mathf.Round(localPos.y);
         localPos.x = (columns % 2 == 0)
-        ? Mathf.Round(localPos.x - 0.5f) + 0.5f
-        : Mathf.Round(localPos.x);
+            ? Mathf.Round(localPos.x - 0.5f) + 0.5f
+            : Mathf.Round(localPos.x);
         position = mapRoot.localToWorldMatrix.MultiplyPoint(localPos);
         rb.position = position;
         transform.position = position; // Ép tọa độ ghim lập tức để Bounds không bị lag 1 frame
+
         Physics2D.SyncTransforms(); // Cập nhật hitbox BoxCollider2D ngay tức khắc
 
         if (!TryGetBlockBounds(out Bounds snapBounds, includeDisabled: false))
@@ -508,16 +499,6 @@ public class BlockMove : MonoBehaviour
                     CheckDoorEnterDepth(); // Kiểm tra độ lún/thẳng hàng và AutoExit ngay!
                     break;
                 }
-            }
-
-            TrashBlock hitTrash = col.GetComponentInParent<TrashBlock>();
-            if (hitTrash != null)
-            {
-                // Vị trí snap bị TrashBlock chiếm → không cho snap vào đây
-                if (doorCollider != null) doorCollider.isTrigger = false;
-                doorCollider = null;
-                currentDoor = null;
-                return;
             }
         }
         if (doorCollider != null) doorCollider.isTrigger = false;
@@ -855,12 +836,6 @@ public class BlockMove : MonoBehaviour
                     return false;
                 }
 
-                TrashBlock hitTrash = hit.collider.GetComponentInParent<TrashBlock>();
-                if (hitTrash != null)
-                {
-                    return false;
-                }
-
                 continue;
             }
         }
@@ -881,7 +856,7 @@ public class BlockMove : MonoBehaviour
     }
 
     private void ExecuteAutoExit(Vector3 exitDir)
-    {
+    {   
         if (currentDoor == null) return;
 
         SFXManager.Instance.Play(AudioKeys.EatBlock, false, 0.75f);

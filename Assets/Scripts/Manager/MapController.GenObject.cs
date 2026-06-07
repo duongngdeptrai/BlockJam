@@ -129,6 +129,44 @@ public partial class MapController : MonoBehaviour
         }
     }
 
+    private void GenTrashBlocks()
+    {
+        if (currentLevelData == null || currentLevelData.trashBlocks == null || currentLevelData.trashBlocks.Count == 0)
+            return;
+
+        if (trashBlockPrefabDict.Count == 0)
+        {
+            Debug.LogError("trashBlockPrefabDict is empty! Check MapController TrashBlock Prefabs in Inspector.");
+            return;
+        }
+
+        trashBlockContainer = EnsureContainerParent(trashBlockContainer, "TrashBlocks");
+
+        foreach (var trashData in currentLevelData.trashBlocks)
+        {
+            string key = "trash_block";
+            if (!trashBlockPrefabDict.TryGetValue(key, out TrashBlock trashPrefab))
+            {
+                Debug.LogError($"TrashBlock prefab not found for key '{key}'. Available keys: [{string.Join(", ", trashBlockPrefabDict.Keys)}]");
+                continue;
+            }
+
+            TrashBlock trashBlock = Instantiate(trashPrefab, trashBlockContainer);
+            trashBlock.transform.position = transform.position + new Vector3(
+                trashData.column - (columns - 1) / 2f,
+                -(trashData.row - (rows - 1) / 2f),
+                0);
+
+            Quaternion rotation = BlockDirectionToRotation(trashData.direction);
+            trashBlock.transform.localRotation = rotation;
+
+            ColorType colorType = GetColorTypeFromString(trashData.color);
+            trashBlock.SetColorBlock(colorType);
+
+            listTrashBlock.Add(trashBlock);
+        }
+    }
+
     private void GenBlocks()
     {
         if (currentLevelData == null || currentLevelData.blocks == null || currentLevelData.blocks.Count == 0)
@@ -158,9 +196,9 @@ public partial class MapController : MonoBehaviour
                 0);
 
             Quaternion rotation = BlockDirectionToRotation(blockData.direction);
-block.transform.localRotation = rotation;
+            block.transform.localRotation = rotation;
 
-ColorType colorType = GetColorTypeFromString(blockData.color);
+            ColorType colorType = GetColorTypeFromString(blockData.color);
             block.SetColorBlock(colorType);
             block.SetHasMine(blockData.hasMine);
 
@@ -170,7 +208,7 @@ ColorType colorType = GetColorTypeFromString(blockData.color);
             }
 
             block.SetHasSecondColor(false);
-            
+
             if (blockData.hasSecondColor && !string.IsNullOrEmpty(blockData.secondColor))
             {
                 ColorType scType = GetColorTypeFromString(blockData.secondColor);

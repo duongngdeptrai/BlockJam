@@ -24,7 +24,8 @@ public static class LevelEditorPreview
             timeLimit = window.TimeLimit,
             blocks = new System.Collections.Generic.List<BlockData>(window.Blocks),
             doors = new System.Collections.Generic.List<DoorSpawnData>(window.Doors),
-            walls = new System.Collections.Generic.List<WallSpawnData>(window.Walls)
+            walls = new System.Collections.Generic.List<WallSpawnData>(window.Walls),
+    trashBlocks = new System.Collections.Generic.List<TrashBlockSpawnData>(window.TrashBlocks)
         };
 
         LevelDataWrapper wrapper = new LevelDataWrapper { level = levelData };
