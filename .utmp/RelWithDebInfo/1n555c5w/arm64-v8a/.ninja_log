@@ -1,0 +1,12 @@
+# ninja log v5
+84	1241	8022915636075862	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	84af1e983b56d24e
+1243	1646	8022915639759140	D:/GameUnity/PikaGame29/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1n555c5w/obj/arm64-v8a/libswappywrapper.so	fc543a563d910335
+52	2160	8022915645200295	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	fffb92ea6229d674
+44	2176	8022915645200295	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	69feca053c989495
+1	2416	8022915645602997	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	48920ae288b61ce1
+64	2599	8022915645826440	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	a6d2474f684fd322
+27	2601	8022915646525999	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	8a02e66fb96a185b
+35	2604	8022915649437955	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	ceaefd00192c57e8
+10	3031	8022915651101872	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	781636911b53a507
+75	7512	8022915698128037	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	d7e478c716b05f2f
+7512	7958	8022915703115423	D:/GameUnity/PikaGame29/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1n555c5w/obj/arm64-v8a/libgame.so	fcdd9a305609d2e3

@@ -1,0 +1,304 @@
+{
+    "level": {
+        "rows": 7,
+        "columns": 14,
+        "timeLimit": 120.0,
+        "blocks": [
+            {
+                "blockType": "blockLShape",
+                "row": 1,
+                "column": 1,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "blockLShape",
+                "row": 1,
+                "column": 4,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "blockLShape",
+                "row": 1,
+                "column": 7,
+                "color": "Blue",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 1,
+                "column": 9,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 4,
+                "column": 10,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "blockTShape",
+                "row": 0,
+                "column": 11,
+                "color": "Orange",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "block1x1",
+                "row": 3,
+                "column": 10,
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 3,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "block1x2",
+                "row": 3,
+                "column": 13,
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 5,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "block1x2",
+                "row": 1,
+                "column": 6,
+                "color": "Red",
+                "hasMine": false,
+                "mineCount": 0,
+                "hasSecondColor": true,
+                "secondColor": "None"
+            },
+            {
+                "blockType": "block1x1",
+                "row": 5,
+                "column": 2,
+                "color": "Red",
+                "hasMine": true,
+                "mineCount": 5,
+                "hasSecondColor": false,
+                "secondColor": ""
+            },
+            {
+                "blockType": "block2x2",
+                "row": 5,
+                "column": 6,
+                "color": "Blue",
+                "hasMine": true,
+                "mineCount": 1,
+                "hasSecondColor": false,
+                "secondColor": ""
+            }
+        ],
+        "doors": [
+            {
+                "row": 0,
+                "column": 0,
+                "direction": "Up",
+                "doorType": "door4",
+                "color": "Red"
+            },
+            {
+                "row": 0,
+                "column": 5,
+                "direction": "Up",
+                "doorType": "door4",
+                "color": "Orange"
+            },
+            {
+                "row": 6,
+                "column": 4,
+                "direction": "Down",
+                "doorType": "door2",
+                "color": "Blue"
+            }
+        ],
+        "walls": [
+            {
+                "row": 0,
+                "column": 4,
+                "direction": "Up"
+            },
+            {
+                "row": 0,
+                "column": 9,
+                "direction": "Up"
+            },
+            {
+                "row": 0,
+                "column": 10,
+                "direction": "Up"
+            },
+            {
+                "row": 0,
+                "column": 11,
+                "direction": "Up"
+            },
+            {
+                "row": 0,
+                "column": 12,
+                "direction": "Up"
+            },
+            {
+                "row": 0,
+                "column": 13,
+                "direction": "Up"
+            },
+            {
+                "row": 6,
+                "column": 0,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 1,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 2,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 3,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 6,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 7,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 8,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 9,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 10,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 11,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 12,
+                "direction": "Down"
+            },
+            {
+                "row": 6,
+                "column": 13,
+                "direction": "Down"
+            },
+            {
+                "row": 0,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 1,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 2,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 3,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 4,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 5,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 6,
+                "column": 0,
+                "direction": "Left"
+            },
+            {
+                "row": 0,
+                "column": 13,
+                "direction": "Right"
+            },
+            {
+                "row": 1,
+                "column": 13,
+                "direction": "Right"
+            },
+            {
+                "row": 2,
+                "column": 13,
+                "direction": "Right"
+            },
+            {
+                "row": 3,
+                "column": 13,
+                "direction": "Right"
+            },
+            {
+                "row": 4,
+                "column": 13,
+                "direction": "Right"
+            },
+            {
+                "row": 5,
+                "column": 13,
+                "direction": "Right"
+            },
+            {
+                "row": 6,
+                "column": 13,
+                "direction": "Right"
+            }
+        ]
+    }
+}

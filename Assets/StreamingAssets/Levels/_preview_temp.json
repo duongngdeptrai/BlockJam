@@ -1,0 +1,86 @@
+{
+    "level": {
+        "rows": 7,
+        "columns": 14,
+        "timeLimit": 120.0,
+        "blocks": [
+            {
+                "blockType": "blockLShape",
+                "row": 4,
+                "column": 4,
+                "color": "Red"
+            },
+            {
+                "blockType": "block2x2",
+                "row": 2,
+                "column": 9,
+                "color": "Red"
+            },
+            {
+                "blockType": "block2x3",
+                "row": 2,
+                "column": 2,
+                "color": "Red"
+            },
+            {
+                "blockType": "block2x3",
+                "row": 2,
+                "column": 7,
+                "color": "Yellow"
+            },
+            {
+                "blockType": "blockTShape",
+                "row": 1,
+                "column": 3,
+                "color": "Yellow"
+            },
+            {
+                "blockType": "blockZShape",
+                "row": 5,
+                "column": 10,
+                "color": "Blue"
+            },
+            {
+                "blockType": "block1x1",
+                "row": 1,
+                "column": 8,
+                "color": "Blue"
+            },
+            {
+                "blockType": "block1x1",
+                "row": 1,
+                "column": 6,
+                "color": "Green"
+            },
+            {
+                "blockType": "block1x1",
+                "row": 5,
+                "column": 7,
+                "color": "Purple"
+            },
+            {
+                "blockType": "block1x1",
+                "row": 2,
+                "column": 12,
+                "color": "Orange"
+            }
+        ],
+        "doors": [
+            {
+                "row": 0,
+                "column": 4,
+                "direction": "Up",
+                "doorType": "door4",
+                "color": "Red"
+            },
+            {
+                "row": 0,
+                "column": 10,
+                "direction": "Up",
+                "doorType": "door4",
+                "color": "Red"
+            }
+        ],
+        "walls": []
+    }
+}
